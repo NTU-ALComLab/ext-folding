@@ -1,2 +1,3 @@
 SRC += \
-    src/ext-hello-abc/init.cpp
+    src/ext-folding/init.cpp \
+    src/ext-folding/bddUtils.cpp
