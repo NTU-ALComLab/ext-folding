@@ -228,7 +228,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         */
         tVec.push_back(clock()); // t3
         
-        bddFreeTable(dd, nsts);
+        bddFreeTable(dd, nsts); //what to test?
         nsts = csts;
         
         for(size_t j=1; j<tVec.size(); ++j)
