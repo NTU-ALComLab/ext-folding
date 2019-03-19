@@ -89,13 +89,14 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     string cstName, nstName;
     
     st__table *csts, *nsts = createDummyState(dd);
-    st__generator *cGen, *nGen;
-    DdNode *cKNode, *cVNode, *nKNode, *nVNode;
+    //st__generator *cGen, *nGen;
+    //DdNode *cKNode, *cVNode, *nKNode, *nVNode;
     size_t cCnt = 0, nCnt;
     
     DdNode **oFuncs  = new DdNode*[nPo];
     DdNode *F = b0;  Cudd_Ref(F);
     DdNode *G, *tmp1, *tmp2;
+    
     
     for(i=nTimeframe-1; i>=0; --i) {
         vector<clock_t> tVec;
@@ -110,20 +111,14 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             tmp1 = Cudd_bddAnd(dd, A[i-1], ft);  Cudd_Ref(tmp1);
             tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
             
-            cout << Cudd_Regular(ft)->ref << " ";
-            cout << Cudd_Regular(tmp1)->ref << " ";
-            cout << Cudd_Regular(tmp2)->ref << " ";
-            
             Cudd_RecursiveDeref(dd, ft);
             Cudd_RecursiveDeref(dd, F);
             Cudd_RecursiveDeref(dd, tmp1);
             F = tmp2;
             
-            cout << Cudd_Regular(F)->ref << " ";
+            
             tVec.push_back(clock());  // t1
-            
             csts = Extra_bddNodePathsUnderCut(dd, F, nVar*i);
-            
             tVec.push_back(clock());  // t2
         }
         else csts = createDummyState(dd);  // i==0
@@ -134,6 +129,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         
         cout << setw(7) << st__count(csts) << " states: ";
         
+        /*
         cCnt = 0;
         st__foreach_item(csts, cGen, (const char**)&cKNode, (char**)&cVNode) {
             cstName = sHead + to_string(i) + uds + to_string(cCnt);
@@ -229,7 +225,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             
             ++cCnt;
         }
-        
+        */
         tVec.push_back(clock()); // t3
         
         bddFreeTable(dd, nsts);
@@ -241,7 +237,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
     
     Cudd_RecursiveDeref(dd, F);
-    
+    cout << Cudd_Regular(F)->ref << " || ";
     
     // write kiss
     ofstream fp;

@@ -135,6 +135,6 @@ void bddFreeTable(DdManager *dd, st__table *tb)
     
     st__foreach_item(tb, gen, (const char**)&kNode, (char**)&vNode)
         Cudd_RecursiveDeref(dd, vNode);
-        
+     
     st__free_table(tb);
 }
