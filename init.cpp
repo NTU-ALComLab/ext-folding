@@ -56,7 +56,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     const size_t nPo = nCo / nTimeframe;           // #POs of the original seq. ckt
     const size_t initVarSize = Cudd_ReadSize(dd);
     const size_t nVar = initVarSize / nTimeframe;  // #variable for each t (#PI of the original seq. ckt)
-    assert(nPo*nTimeframe == nCo);
+    assert(nPo * nTimeframe == nCo);
     assert(initVarSize % nTimeframe == 0);
     
     
@@ -68,17 +68,10 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     
     
     // compute signature
-    DdNode **A = computeSign(dd, nTimeframe-1);  // foreach timeframe
-    DdNode **B = computeSign(dd, nPo);           // foreach PO
-    DdNode *b = Cudd_bddNewVar(dd);  //Cudd_bddIthVar(dd, initVarSize);
-    DdNode **_B[2];
-    for(size_t j=0; j<2; ++j) {
-        _B[j] = new DdNode*[nPo];
-        for(size_t k=0; k<nPo; ++k) {
-            _B[j][k] = Cudd_bddAnd(dd, B[k], Cudd_NotCond(b, (j==0)));  Cudd_Ref(_B[j][k]);
-        }
-    }
-    
+    //DdNode **A = computeSign(dd, nTimeframe-1);  // foreach timeframe
+    size_t nB = nPo ? (size_t)ceil(log2(double(nPo*2))) : 0;
+    DdNode **B = computeSign(dd, nPo*2);           // foreach PO
+    assert(initVarSize+nB == Cudd_ReadSize(dd));
     
     // collecting states at each timeframe
     vector<string> stg;
@@ -89,14 +82,14 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     string cstName, nstName;
     
     st__table *csts, *nsts = createDummyState(dd);
-    //st__generator *cGen, *nGen;
-    //DdNode *cKNode, *cVNode, *nKNode, *nVNode;
+    st__generator *cGen, *nGen;
+    DdNode *cKNode, *cVNode, *nKNode, *nVNode;
     size_t cCnt = 0, nCnt;
     
-    DdNode **oFuncs  = new DdNode*[nPo];
-    DdNode *F = b0;  Cudd_Ref(F);
-    DdNode *G, *tmp1, *tmp2;
     
+    DdNode **oFuncs  = new DdNode*[nPo];
+    //DdNode *F = b0;  Cudd_Ref(F);
+    DdNode *G, *tmp1, *tmp2;
     
     for(i=nTimeframe-1; i>=0; --i) {
         vector<clock_t> tVec;
@@ -107,19 +100,45 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         if(i) {
             tVec.push_back(clock());  // t0
             
-            DdNode *ft = bddDot(dd, pNodeVec+i*nPo, B, nPo);            
-            tmp1 = Cudd_bddAnd(dd, A[i-1], ft);  Cudd_Ref(tmp1);
-            tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
+            size_t pCnt = 0, nFuncs = st__count(nsts);
+            DdNode **pFuncs = new DdNode*[nFuncs];
+            st__foreach_item(nsts, nGen, (const char**)&nKNode, (char**)&nVNode)
+                pFuncs[pCnt++] = nVNode;
+            assert(pCnt == nFuncs);
+            if(pCnt == 1) assert(pFuncs[0] == b1);
+            
+            size_t na = (size_t)ceil(log2(double(nFuncs))) + 2;
+            
+            DdNode **a = new DdNode*[na];
+            for(size_t j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+nB+j);
+            
+            
+            DdNode *ft = bddDot(dd, pNodeVec+i*nPo, B, nPo);
+            tmp1 = Cudd_bddAnd(dd, Cudd_Not(a[0]), ft);  Cudd_Ref(tmp1);
+            Cudd_RecursiveDeref(dd, ft);
+            ft = tmp1;
+
+            
+            tmp1 = Extra_bddEncodingBinary(dd, pFuncs, nFuncs, a+1, na-1);  Cudd_Ref(tmp1);
+            tmp2 = Cudd_bddAnd(dd, a[0], tmp1);  Cudd_Ref(tmp2);
+            Cudd_RecursiveDeref(dd, tmp1);
+            
+            
+            tmp1 = Cudd_bddOr(dd, ft, tmp2);  Cudd_Ref(tmp1);
             
             Cudd_RecursiveDeref(dd, ft);
-            Cudd_RecursiveDeref(dd, F);
-            Cudd_RecursiveDeref(dd, tmp1);
-            F = tmp2;
-            
+            Cudd_RecursiveDeref(dd, tmp2);
+
             
             tVec.push_back(clock());  // t1
-            csts = Extra_bddNodePathsUnderCut(dd, F, nVar*i);
+            
+            csts = Extra_bddNodePathsUnderCut(dd, tmp1, nVar*i);
+            
             tVec.push_back(clock());  // t2
+            
+            Cudd_RecursiveDeref(dd, tmp1);
+            delete [] a;
+            delete [] pFuncs;
         }
         else csts = createDummyState(dd);  // i==0
         
@@ -129,7 +148,6 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         
         cout << setw(7) << st__count(csts) << " states: ";
         
-        /*
         cCnt = 0;
         st__foreach_item(csts, cGen, (const char**)&cKNode, (char**)&cVNode) {
             cstName = sHead + to_string(i) + uds + to_string(cCnt);
@@ -161,7 +179,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                     G = b0;  Cudd_Ref(G);
                     for(size_t k=0; k<2; ++k) {
                         bddNotVec(oFuncs, nPo);   // 2*negation overall
-                        tmp1 = bddDot(dd, oFuncs, _B[k], nPo);
+                        tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
                         tmp2 = Cudd_bddOr(dd, G, tmp1);  Cudd_Ref(tmp2);
                         
                         Cudd_RecursiveDeref(dd, G);
@@ -225,10 +243,10 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             
             ++cCnt;
         }
-        */
+        
         tVec.push_back(clock()); // t3
         
-        bddFreeTable(dd, nsts); //what to test?
+        bddFreeTable(dd, nsts);
         nsts = csts;
         
         for(size_t j=1; j<tVec.size(); ++j)
@@ -236,8 +254,8 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
     }
     
-    Cudd_RecursiveDeref(dd, F);
-    cout << Cudd_Regular(F)->ref << " || ";
+    //Cudd_RecursiveDeref(dd, F);
+    
     
     // write kiss
     ofstream fp;
@@ -254,10 +272,8 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     
     // free array
     delete [] oFuncs;
-    bddFreeVec(dd, A, nTimeframe-1);
-    bddFreeVec(dd, B, nPo);
-    bddFreeVec(dd, _B[0], nPo);
-    bddFreeVec(dd, _B[1], nPo);
+    //bddFreeVec(dd, A, nTimeframe-1);
+    bddFreeVec(dd, B, 2*nPo);
     bddFreeTable(dd, nsts);
     bddFreeVec(dd, pNodeVec, nCo);
     
