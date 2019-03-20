@@ -19,18 +19,7 @@ namespace
 
 int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
-    /*
-    bool showUsg = false;
-    if(argc != 2) showUsg = true;
-    else if(argv[1][0] == '-') showUsg = true;
-    if(showUsg) {
-        Abc_Print(-2, "usage: timefold [-h] <file>\n");
-        Abc_Print(-2, "             fold the circuit after time expansion and transform it into a STG\n");
-        Abc_Print(-2, "\t-h       : print the command usage\n");
-        Abc_Print(-2, "\tfile     : the kiss file name\n");
-        return 1;
-    }
-    */
+
     
     // usage: timefold <nTimeframe> <kissFile>
     // get args
