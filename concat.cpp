@@ -15,6 +15,77 @@ using namespace std;
 
 namespace
 {
+// function overload
+Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
+{
+    if(!nNtks || !pNtks) return NULL;
+    
+    int i;  char charBuf[1000]; string strBuf;
+    Abc_Ntk_t *pNtkNew;
+    Abc_Obj_t *pObj, *pObjNew;
+    
+    for(i=0; i<nNtks; ++i) {
+        assert(Abc_NtkIsStrash(pNtks[i]));
+        assert(Abc_NtkIsDfsOrdered(pNtks[i]));
+    }
+    
+    // start the new network
+    pNtkNew = Abc_NtkAlloc( ABC_NTK_STRASH, ABC_FUNC_AIG, 1 );
+    
+    for(i=0; i<nNtks; ++i)
+        strBuf += string(pNtks[i]->pName) + string("_");
+    sprintf(charBuf, strBuf.c_str(), "concat");
+    pNtkNew->pName = Extra_UtilStrsav(charBuf);
+    
+    for(i=0; i<nNtks; ++i)
+        Abc_AigConst1(pNtks[i])->pCopy = Abc_AigConst1(pNtkNew);
+    
+    // create new PIs and remember them in the old PIs
+    Abc_NtkForEachCi(pNtks[0], pObj, i) {
+        pObjNew = Abc_NtkCreatePi(pNtkNew);
+        // remember this PI in the old PIs
+        pObj->pCopy = pObjNew;
+        for(size_t j=1; j<nNtks; ++j) {
+            pObj = Abc_NtkCi(pNtks[j], i);  
+            pObj->pCopy = pObjNew;
+        }
+        // add name
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
+    }
+    
+    // create POs for each Ntk
+    for(size_t j=0; j<nNtks; ++j)  Abc_NtkForEachCo(pNtks[j], pObj, i) {
+        pObjNew = Abc_NtkCreatePo(pNtkNew);
+        pObj->pCopy = pObjNew;
+        strBuf = string("concat") + to_string(j+1) + string("_");
+        strcpy(charBuf, strBuf.c_str()); 
+        Abc_ObjAssignName(pObjNew, charBuf, Abc_ObjName(pObj));
+    }
+    
+    
+    // AddOne for each Ntk
+    for(size_t j=0; j<nNtks; ++j)  Abc_AigForEachAnd(pNtks[j], pObj, i)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+
+    
+    // collect POs for each Ntk
+    for(size_t j=0; j<nNtks; ++j)  Abc_NtkForEachCo(pNtks[j], pObj, i) {
+        pObjNew = Abc_ObjChild0Copy(pObj);
+        Abc_ObjAddFanin(Abc_NtkPo(pNtkNew, i), pObjNew);
+    }
+    
+    Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
+    
+    if (!Abc_NtkCheck(pNtkNew))
+    {
+        printf( "concat: The network check has failed.\n" );
+        Abc_NtkDelete(pNtkNew);
+        return NULL;
+    }
+    
+    return pNtkNew;
+}
+    
 Abc_Ntk_t* concat(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2)
 {
     int i;
@@ -111,7 +182,7 @@ int Concat_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     int fRemove[2];
     
     for(i=0; i<2; ++i) {
-        pNtk[i] = Io_Read( argv[i+1], Io_ReadFileType(argv[i+1]), fCheck, fBarBufs );
+        pNtk[i] = Io_Read(argv[i+1], Io_ReadFileType(argv[i+1]), fCheck, fBarBufs);
         assert(Abc_NtkHasOnlyLatchBoxes(pNtk[i]));
         fRemove[i] = (!Abc_NtkIsStrash(pNtk[i]) || Abc_NtkGetChoiceNum(pNtk[i])) && (pNtk[i] = Abc_NtkStrash(pNtk[i], 0, 0, 0));
     }
