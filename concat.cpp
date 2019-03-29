@@ -54,7 +54,7 @@ Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
     }
     
     // create POs for each Ntk
-    for(size_t j=0; j<nNtks; ++j)  Abc_NtkForEachCo(pNtks[j], pObj, i) {
+    for(size_t j=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
         pObjNew = Abc_NtkCreatePo(pNtkNew);
         pObj->pCopy = pObjNew;
         strBuf = string("concat") + to_string(j+1) + string("_");
@@ -64,12 +64,12 @@ Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
     
     
     // AddOne for each Ntk
-    for(size_t j=0; j<nNtks; ++j)  Abc_AigForEachAnd(pNtks[j], pObj, i)
+    for(size_t j=0; j<nNtks; ++j) Abc_AigForEachAnd(pNtks[j], pObj, i)
         pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
     
     // collect POs for each Ntk
-    for(size_t j=0; j<nNtks; ++j)  Abc_NtkForEachCo(pNtks[j], pObj, i) {
+    for(size_t j=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
         pObjNew = Abc_ObjChild0Copy(pObj);
         Abc_ObjAddFanin(Abc_NtkPo(pNtkNew, i), pObjNew);
     }
