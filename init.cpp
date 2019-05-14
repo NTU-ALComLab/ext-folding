@@ -177,8 +177,8 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                     DdNode *_path = Cudd_Cofactor(dd, nVNode, _cube);  Cudd_Ref(_path);
                     
                     G = b0;  Cudd_Ref(G);
-                    for(size_t k=0; k<2; ++k) {
-                        bddNotVec(oFuncs, nPo);   // 2*negation overall
+                    for(size_t k=0; k<1; ++k) {
+                        //bddNotVec(oFuncs, nPo);   // 2*negation overall
                         tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
                         tmp2 = Cudd_bddOr(dd, G, tmp1);  Cudd_Ref(tmp2);
                         
