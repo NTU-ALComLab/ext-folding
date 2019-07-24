@@ -22,6 +22,20 @@ using namespace std;
 
 namespace
 {
+Abc_Ntk_t* ntkStrash(Abc_Ntk_t *pNtk)
+{
+    Abc_Ntk_t *pNtkRes = Abc_NtkStrash(pNtk, 0, 0, 0);
+    Abc_NtkDelete(pNtk);
+    return pNtkRes;
+}
+
+Abc_Ntk_t* ntkToLogic(Abc_Ntk_t *pNtk)
+{
+    Abc_Ntk_t *pNtkRes = Abc_NtkToLogic(pNtk);
+    Abc_NtkDelete(pNtk);
+    return pNtkRes;
+}
+    
 Abc_Obj_t* bitsToCube(Abc_Ntk_t *pNtk, size_t n, Abc_Obj_t **pVars, const size_t& nVars)
 {
     assert((1<<nVars) >= n);
@@ -117,7 +131,7 @@ Abc_Obj_t* getNtkIthVar(Abc_Ntk_t *pNtk, const size_t i)
 Abc_Ntk_t* createDummyState()
 {
     Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
-    pNtk->pName = "states";
+    pNtk->pName = Extra_UtilStrsav("states");
     Abc_Obj_t *pObj = Abc_NtkCreatePo(pNtk);
     Abc_ObjAssignName(pObj, "S0", NULL);
     Abc_ObjAddFanin(pObj, Abc_AigConst1(pNtk));
@@ -128,7 +142,7 @@ Abc_Ntk_t* createDummyState()
 
 void showBdd(Abc_Ntk_t *pNtk, const string& name)
 {
-    if(!Abc_NtkIsStrash(pNtk)) pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, 10000000, 1, 0, 0, 0);
     const size_t n = Abc_NtkPoNum(pNtk);
     DdNode **nv = new DdNode*[n];
@@ -139,14 +153,20 @@ void showBdd(Abc_Ntk_t *pNtk, const string& name)
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
     delete [] nv;
+    Abc_NtkDelete(pNtk);
 }
 
-bool getNextMinterm(Abc_Ntk_t *pNtk, vector<bool>& minterm)
+inline bool checkNtk(Abc_Ntk_t *pNtk)
+{
+    return Abc_NtkCheck(pNtk) && Abc_NtkIsDfsOrdered(pNtk) && Abc_NtkIsStrash(pNtk); 
+}
+
+bool getNextMinterm(Abc_Ntk_t *pNtk, vector<bool>& minterm, const bool fCompl)
 {
     const size_t nPo = Abc_NtkPoNum(pNtk);
-    cout << nPo << " states" << endl;
     Aig_Man_t *pMan = Abc_NtkToDar(pNtk, 0, 0 );
     Cnf_Dat_t *pCnf = Cnf_Derive(pMan, nPo);
+    //Cnf_Dat_t *pCnf = Cnf_DeriveSimple(pMan, nPo);
     sat_solver_t *pSat = sat_solver_new();
     sat_solver_setnvars(pSat, pCnf->nVars);
     for(int i=0; i<pCnf->nClauses; ++i)
@@ -155,17 +175,14 @@ bool getNextMinterm(Abc_Ntk_t *pNtk, vector<bool>& minterm)
     lit *ua = new lit[nPo];
     for(size_t i=0; i<nPo; ++i) {
         Aig_Obj_t *pObj = Aig_ManCo(pMan, i);
-        ua[i] = toLitCond(pCnf->pVarNums[Aig_ObjId(pObj)], 1); //???????
+        ua[i] = toLitCond(pCnf->pVarNums[Aig_ObjId(pObj)], (int)fCompl);
     }
     
-    cout << "mt: ";
     int r = sat_solver_solve(pSat, ua, ua+nPo, 0, 0, 0, 0);
     if(r == l_True) for(size_t i=0; i<minterm.size(); ++i) {
         int var = pCnf->pVarNums[Aig_ObjId(Aig_ManCi(pMan, i))];
         minterm[i] = (bool)sat_solver_var_value(pSat, var);
-        cout << minterm[i];
     }
-    cout << endl;
     
     // release memory
     sat_solver_delete(pSat);
@@ -173,54 +190,183 @@ bool getNextMinterm(Abc_Ntk_t *pNtk, vector<bool>& minterm)
     Aig_ManStop(pMan);
     delete [] ua;
     
-    if(r == l_True)
-        cout << "SAT!!" << endl;
+    //if(r == l_True)
+    //    cout << "SAT!!" << endl;
+    //else
+    //    cout << "UNSAT!!" << endl;
     
     return r == l_True;
+}
+
+bool checkSts(Abc_Ntk_t *pNtk)
+{
+    bool ret = true;
+    pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, 10000000, 1, 0, 0, 0);
+    
+    DdNode *f = b0;  Cudd_Ref(f);
+    DdNode *tmp1, *tmp2;
+    for(size_t i=0; i<Abc_NtkPoNum(pNtk) && ret; ++i) {
+        tmp1 = (DdNode *)Abc_ObjGlobalBdd(Abc_NtkPo(pNtk, i));
+        
+        tmp2 = Cudd_bddAnd(dd, f, tmp1);  Cudd_Ref(tmp2);
+        if(tmp2 != b0) { ret = false; cout << "1 fail @" << i << endl; }
+        Cudd_RecursiveDeref(dd, tmp2);
+        
+        tmp2 = Cudd_bddOr(dd, f, tmp1);  Cudd_Ref(tmp2);
+        Cudd_RecursiveDeref(dd, f);
+        f = tmp2;
+    }
+    
+    if(ret) {
+        ret = (f == b1);
+        if(!ret) cout << "2 fail" << endl;
+    }
+    
+    Cudd_RecursiveDeref(dd, f);
+    Abc_NtkFreeGlobalBdds(pNtk, 0);
+    Cudd_Quit(dd);
+    Abc_NtkDelete(pNtk);
+    return ret;
+}
+
+void printStsCubes(Abc_Ntk_t *pNtk, const size_t level)
+{
+    pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, 10000000, 1, 0, 0, 0);
+    
+    int i;  Abc_Obj_t *pObj;  DdNode *f;
+    int *cube;  CUDD_VALUE_TYPE val;  DdGen *gen;
+    Abc_NtkForEachCo(pNtk, pObj, i) {
+        cout << i << ":" << endl;
+        f = (DdNode *)Abc_ObjGlobalBdd(pObj);
+        Cudd_ForeachCube(dd, f, gen, cube, val) {
+            for(size_t j=0; j<level; ++j)
+                cout << cube[j];
+            cout << endl;
+        }
+    }
+    Abc_NtkFreeGlobalBdds(pNtk, 0);
+    Cudd_Quit(dd);
+    Abc_NtkDelete(pNtk);
+}
+
+void bddDumpBlif(Abc_Ntk_t *pNtk, const string& name)
+{
+    FILE * fp = fopen((name+".blif").c_str(), "w");
+    pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, 10000000, 1, 0, 0, 0);
+    const size_t n = Abc_NtkPoNum(pNtk);
+    DdNode **nv = new DdNode*[n];
+    int i;  Abc_Obj_t *pObj;
+    Abc_NtkForEachCo(pNtk, pObj, i)
+        nv[i] = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
+    assert(Cudd_DumpBlif(dd, n, nv, NULL, NULL, NULL, fp, 0));
+
+    Abc_NtkFreeGlobalBdds(pNtk, 0);
+    Cudd_Quit(dd);
+    delete [] nv;
+    Abc_NtkDelete(pNtk);
+    fclose(fp);
+}
+
+Abc_Ntk_t* myMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl)
+{
+    assert(Abc_NtkIsStrash(pNtk1) && Abc_NtkIsStrash(pNtk2));
+    assert(Abc_NtkPoNum(pNtk1) == Abc_NtkPoNum(pNtk1));
+    assert(Abc_NtkPiNum(pNtk1) == Abc_NtkPiNum(pNtk1));
+    assert(Abc_NtkPoNum(pNtk1) == 1);
+    
+    int i;  char Buffer[1000];
+    Abc_Ntk_t *pNtkNew;
+    Abc_Obj_t *pObj, *pObjNew;
+    
+    // start the new network
+    pNtkNew = Abc_NtkAlloc( ABC_NTK_STRASH, ABC_FUNC_AIG, 1 );
+    pNtkNew->pName = Extra_UtilStrsav("miter");
+    
+    Abc_AigConst1(pNtk1)->pCopy = Abc_AigConst1(pNtkNew);
+    Abc_AigConst1(pNtk2)->pCopy = Abc_AigConst1(pNtkNew);
+    
+    // create new PIs and remember them in the old PIs
+    Abc_NtkForEachCi(pNtk1, pObj, i) {
+        pObjNew = Abc_NtkCreatePi(pNtkNew);
+        // remember this PI in the old PIs
+        pObj->pCopy = pObjNew;
+        pObj = Abc_NtkCi(pNtk2, i);  
+        pObj->pCopy = pObjNew;
+        // add name
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL );
+    }
+    
+    assert(Abc_NtkIsDfsOrdered(pNtk1));
+    assert(Abc_NtkIsDfsOrdered(pNtk2));
+    
+    // AddOne for Ntk1
+    Abc_AigForEachAnd(pNtk1, pObj, i)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, 
+                                 Abc_ObjChild0Copy(pObj), 
+                                 Abc_ObjChild1Copy(pObj));
+    // AddOne for Ntk2                          
+    Abc_AigForEachAnd(pNtk2, pObj, i)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, 
+                                 Abc_ObjChild0Copy(pObj), 
+                                 Abc_ObjChild1Copy(pObj));
+    
+    pObjNew = Abc_AigXor((Abc_Aig_t*)pNtkNew->pManFunc, 
+                         Abc_ObjChild0Copy(Abc_NtkPo(pNtk1, 0)),
+                         Abc_ObjChild0Copy(Abc_NtkPo(pNtk2, 0)));
+    if(fCompl) pObjNew = Abc_ObjNot(pObjNew);
+    
+    pObj = Abc_NtkCreatePo(pNtkNew);
+    Abc_ObjAssignName(pObj, "mo", NULL);
+    
+    Abc_ObjAddFanin(pObj, pObjNew);
+    
+    Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
+    
+    assert(Abc_NtkCheck(pNtkNew));
+    
+    return pNtkNew;
 }
 
 Abc_Ntk_t* getStates(Abc_Ntk_t *pNtk, const size_t level)
 {
     assert(Abc_NtkPoNum(pNtk) == 1);
+    assert(checkNtk(pNtk));
+    
     int i;  char buf[1000];
     Abc_Obj_t *tmp1, *tmp2;
-    vector<bool> minterm(level, true);
+    vector<bool> minterm(level, false);
     bool next = true;
     size_t iter = 0;
     Abc_Ntk_t *pNtkDup, *pNtkMiter;
     Abc_Ntk_t *sts = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
-    sts->pName = "states";
+    sts->pName = Extra_UtilStrsav("states");
     
     Abc_NtkForEachCi(pNtk, tmp1, i)
         Abc_ObjAssignName(Abc_NtkCreatePi(sts), Abc_ObjName(tmp1), NULL);
     
-    cout << "start!!" << endl;
-    showBdd(pNtk, "qdump/orig");
+    //cout << "start!!" << endl;
     while(next) {
         // build miter
-        pNtkDup = Abc_NtkDup(pNtk);
-        pNtkDup = Abc_NtkToLogic(pNtkDup);
+        pNtkDup = Abc_NtkToLogic(pNtk);
+        
         for(i=0; i<minterm.size(); ++i)
             Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkDup, i), (int)minterm[i]);
-        showBdd(pNtkDup, "qdump/c"+to_string(iter));
-        pNtkMiter = Abc_NtkMiter(pNtk, pNtkDup, 0, 0, 0, 0);
-        showBdd(pNtkMiter, "qdump/n"+to_string(iter));
-        tmp1 = Abc_NtkPo(pNtkMiter, 0);
-        tmp2 = Abc_ObjChild0(tmp1);
-        Abc_ObjRemoveFanins(tmp1);
-        Abc_ObjAddFanin(tmp1, Abc_ObjNot(tmp2));
+        
+        pNtkDup = ntkStrash(pNtkDup);
+        
+        pNtkMiter = myMiter(pNtk, pNtkDup, 1);
+        //pNtkMiter = Abc_NtkMiter(pNtk, pNtkDup, 0, 0, 0, 0);
+        //Abc_ObjXorFaninC(Abc_NtkPo(pNtkMiter, 0), 0);
+        
         assert(Abc_NtkPoNum(pNtkMiter) == 1);
-        Abc_NtkDelete(pNtkDup);
-        showBdd(pNtkMiter, "qdump/m"+to_string(iter));
         
         // univ quant
-        for(i=level; i<Abc_NtkPiNum(pNtkMiter); ++i) {
+        for(i=level; i<Abc_NtkPiNum(pNtkMiter); ++i)
             assert(Abc_NtkQuantify(pNtkMiter, 1, i, 0));
-            showBdd(pNtkMiter, "qdump/q"+to_string(iter)+"_"+to_string(i));
-        }
         Abc_AigCleanup((Abc_Aig_t*)pNtkMiter->pManFunc);
-        showBdd(pNtkMiter, "qdump/q"+to_string(iter));
-        
         
         // add new state
         assert(Abc_NtkPiNum(sts) == Abc_NtkPiNum(pNtkMiter));
@@ -237,21 +383,19 @@ Abc_Ntk_t* getStates(Abc_Ntk_t *pNtk, const size_t level)
         Abc_ObjAddFanin(tmp1, Abc_ObjChild0Copy(Abc_NtkPo(pNtkMiter, 0)));
         Abc_AigCleanup((Abc_Aig_t*)sts->pManFunc);
         
-        showBdd(sts, "qdump/i"+to_string(iter));
-        
         // get next minterm
-        next = getNextMinterm(sts, minterm);
+        next = getNextMinterm(sts, minterm, true);
         
-        cout << "iter " << iter << endl;
         Abc_NtkDelete(pNtkMiter);
+        Abc_NtkDelete(pNtkDup);
+        
         assert(Abc_NtkPoNum(sts) == ++iter);
-        
-        
-        if(iter == 3) exit(1);
+        //if(iter == 1) exit(1);
     }
     
     Abc_AigCleanup((Abc_Aig_t*)sts->pManFunc);
     assert(Abc_NtkCheck(sts));
+    //printStsCubes(sts, level);
     return sts;
 }
 
@@ -264,7 +408,7 @@ Abc_Ntk_t* getPartNtk(Abc_Ntk_t *pNtk, const size_t start, const size_t end)
     int i;  Abc_Obj_t *pObj, *pObjNew;
     
     Abc_Ntk_t *pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
-    pNtkNew->pName = "part";
+    pNtkNew->pName = Extra_UtilStrsav("part");
     
     Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkNew);
     Abc_NtkForEachCi(pNtk, pObj, i) {
@@ -304,12 +448,13 @@ Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
     Abc_Obj_t *pObj, *pObjNew;
     
     for(i=0; i<nNtks; ++i) {
+        assert(Abc_NtkCheck(pNtks[i]));
         assert(Abc_NtkIsStrash(pNtks[i]));
         assert(Abc_NtkIsDfsOrdered(pNtks[i]));
     }
     
     // start the new network
-    pNtkNew = Abc_NtkAlloc( ABC_NTK_STRASH, ABC_FUNC_AIG, 1 );
+    pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     
     for(i=0; i<nNtks; ++i)
         strBuf += string(pNtks[i]->pName) + string("_");
@@ -341,28 +486,32 @@ Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
         Abc_ObjAssignName(pObjNew, charBuf, Abc_ObjName(pObj));
     }
     
-    
     // AddOne for each Ntk
     for(size_t j=0; j<nNtks; ++j) Abc_AigForEachAnd(pNtks[j], pObj, i)
         pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
-    
     // collect POs for each Ntk
-    for(size_t j=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
+    for(size_t j=0,k=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
         pObjNew = Abc_ObjChild0Copy(pObj);
-        Abc_ObjAddFanin(Abc_NtkPo(pNtkNew, i), pObjNew);
+        Abc_ObjAddFanin(Abc_NtkCo(pNtkNew, k++), pObjNew);
     }
     
     Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
-    
-    if (!Abc_NtkCheck(pNtkNew))
-    {
-        printf( "concat: The network check has failed.\n" );
-        Abc_NtkDelete(pNtkNew);
-        return NULL;
-    }
+    assert(Abc_NtkCheck(pNtkNew));
     
     return pNtkNew;
+}
+
+Abc_Ntk_t* ntkCone(Abc_Ntk_t *pNtk, const size_t n)
+{
+    assert(n < Abc_NtkPoNum(pNtk));
+    Abc_Obj_t *pNodeCo = Abc_NtkCo(pNtk, n);
+    Abc_Ntk_t *pNtkRes = Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pNodeCo), Abc_ObjName(pNodeCo), 1);
+    if(Abc_ObjFaninC0(pNodeCo))
+        Abc_NtkPo(pNtkRes, 0)->fCompl0 ^= 1;
+    assert(Abc_NtkCheck(pNtkRes));
+    //Abc_NtkDelete(pNtk);
+    return pNtkRes;
 }
 
 int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
@@ -380,7 +529,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_Print( -1, "Empty network.\n" );
         return 1;
     }
-    if(!Abc_NtkIsStrash(pNtk)) pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    //if(!Abc_NtkIsStrash(pNtk)) pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
     
     
     // get basic settings
@@ -391,14 +540,14 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     assert(nPo * nTimeframe == nCo);
     assert(initVarSize % nTimeframe == 0);
     
-    Abc_Ntk_t *pNtkDup = Abc_NtkDup(pNtk);
+    Abc_Ntk_t *pNtkDup = Abc_NtkStrash(pNtk, 0, 0, 0);
     Abc_Aig_t *pMan = (Abc_Aig_t*)pNtkDup->pManFunc;
     Abc_ObjAssignName(Abc_NtkCreatePo(pNtkDup), "hyper", NULL);
     
     DdManager *dd = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS,CUDD_CACHE_SLOTS, 0);
     
     // add signature var
-    const size_t nb = nPo ? (size_t)ceil(log2(double(nPo))) : 0;
+    const size_t nb = nPo ? (size_t)ceil(log2(double(nPo*2))) : 0;
     Abc_Obj_t **b = new Abc_Obj_t*[nb];
     for(i=0; i<nb; ++i)
         b[i] = getNtkIthVar(pNtkDup, initVarSize+i);
@@ -438,7 +587,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                 tmp1->pCopy = Abc_AigAnd(pMan, Abc_ObjChild0Copy(tmp1), Abc_ObjChild1Copy(tmp1));
             for(j=0; j<nFuncs; ++j)
                 pFuncs[j] = Abc_ObjChild0Copy(Abc_NtkPo(nsts, j));            
-            if(nFuncs == 1) assert(pFuncs[0] == Abc_AigConst1(pNtkDup));
+            //if(nFuncs == 1) assert(pFuncs[0] == Abc_AigConst1(pNtkDup));
             
             size_t na = (size_t)ceil(log2(double(nFuncs))) + 2;
             Abc_Obj_t **a = new Abc_Obj_t*[na];
@@ -446,7 +595,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             
             Abc_Obj_t *ft = Abc_ObjNot(Abc_AigConst1(pNtkDup));
             for(j=0; j<nPo; ++j) {
-                tmp1 = Abc_ObjFanin0(Abc_NtkPo(pNtkDup, i*nPo+j));
+                tmp1 = Abc_ObjChild0(Abc_NtkPo(pNtkDup, i*nPo+j));
                 tmp2 = bitsToCube(pNtkDup, j, b, nb);
                 
                 ft = Abc_AigOr(pMan, ft, Abc_AigAnd(pMan, tmp1, tmp2));
@@ -462,13 +611,16 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             
             ft = Abc_AigOr(pMan, ft, tmp1);
             j = Abc_NtkPoNum(pNtkDup) - 1;
-            Abc_ObjAddFanin(Abc_NtkPo(pNtkDup, j), ft);
+            tmp1 = Abc_NtkPo(pNtkDup, j);
+            Abc_ObjRemoveFanins(tmp1);
+            Abc_ObjAddFanin(tmp1, ft);
             
             tVec.push_back(clock());  // t1
             
-            tmp1 = Abc_NtkPo(pNtkDup, j);
+            //tmp1 = Abc_NtkPo(pNtkDup, j);
             //csts = getStates(Abc_NtkCreateCone(pNtkDup, ft, "hyper", 1), nVar*i);
-            csts = getStates(Abc_NtkCreateCone(pNtkDup, Abc_ObjFanin0(tmp1), Abc_ObjName(tmp1), 1), nVar*i);
+            //csts = getStates(Abc_NtkCreateCone(pNtkDup, Abc_ObjFanin0(tmp1), Abc_ObjName(tmp1), 1), nVar*i);
+            csts = getStates(ntkCone(pNtkDup, j), nVar*i);
             
             tVec.push_back(clock());  // t2
             
@@ -482,9 +634,14 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         stsSum += Abc_NtkPoNum(csts);
         cout << setw(7) << Abc_NtkPoNum(csts) << " states: ";
         
-        if(Abc_NtkPiNum(nsts) < Abc_NtkPiNum(csts))
-            for(size_t j=Abc_NtkPiNum(nsts); j<Abc_NtkPiNum(csts); ++j)
+        if(Abc_NtkPiNum(nsts) < Abc_NtkPiNum(pNtkDup))
+            for(size_t j=Abc_NtkPiNum(nsts); j<Abc_NtkPiNum(pNtkDup); ++j)
                 assert(getNtkIthVar(nsts, j));
+        if(Abc_NtkPiNum(csts) < Abc_NtkPiNum(pNtkDup))
+            for(size_t j=Abc_NtkPiNum(csts); j<Abc_NtkPiNum(pNtkDup); ++j)
+                assert(getNtkIthVar(csts, j));
+            
+        
         Abc_Ntk_t *ntkToCat[3];
         ntkToCat[0] = getPartNtk(pNtkDup, i*nPo, (i+1)*nPo);
         ntkToCat[1] = csts;  ntkToCat[2] = nsts;
@@ -497,20 +654,42 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         }
         
         for(cCnt=0; cCnt<Abc_NtkPoNum(csts); ++cCnt) {
+            // cout << "@cst " << cCnt << " / " << Abc_NtkPoNum(csts) << endl;
             cstName = sHead + to_string(i) + uds + to_string(cCnt);
             
-            tmp1 = Abc_ObjFanin0(Abc_NtkPo(pNtkCat, nPo+cCnt));
+            /* method 1: exist quantify
+            tmp1 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, nPo+cCnt));
             for(size_t j=0; j<nPo; ++j) {
-                tmp2 = Abc_ObjFanin0(Abc_NtkPo(pNtkCat, j));
+                tmp2 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, j));
                 tmp2 = Abc_AigAnd((Abc_Aig_t*)pNtkCat->pManFunc, tmp1, tmp2);
-                Abc_Obj_t *po = Abc_NtkPo(pNtkCat, Abc_NtkPoNum(pNtkCat)-1-nPo+i);
+                Abc_Obj_t *po = Abc_NtkPo(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo+j);
                 Abc_ObjRemoveFanins(po);
                 Abc_ObjAddFanin(po, tmp2);
             }
-            
+            Abc_NtkCheck(pNtkCat);
             Abc_Ntk_t *pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo, Abc_NtkPoNum(pNtkCat));
             for(size_t j=0; j<nVar*i; ++j)
                 assert(Abc_NtkQuantify(pNtkOut, 0, j, 0));
+            */ 
+            
+            /* method 2: cube cofactor */
+            vector<bool> minterm(nVar*i, false);
+            Abc_Ntk_t *pNtkTmp = ntkCone(pNtkCat, nPo+cCnt);
+            assert(getNextMinterm(pNtkTmp, minterm, false));
+            Abc_NtkDelete(pNtkTmp);
+            for(size_t j=0; j<nPo; ++j) {
+                tmp2 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, j));
+                Abc_Obj_t *po = Abc_NtkPo(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo+j);
+                Abc_ObjRemoveFanins(po);
+                Abc_ObjAddFanin(po, tmp2);
+            }
+            Abc_NtkCheck(pNtkCat);
+            Abc_Ntk_t *pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo, Abc_NtkPoNum(pNtkCat));
+            pNtkOut = ntkToLogic(pNtkOut);
+            for(size_t j=0; j<minterm.size(); ++j)
+                Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkOut, j), (int)minterm[j]);
+            pNtkOut = ntkStrash(pNtkOut);
+            assert(Abc_NtkCiNum(pNtkCat) == Abc_NtkCiNum(pNtkOut));
             
             DdManager *_dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtkOut, 10000000, 1, 0, 0, 0);
             for(size_t j=0; j<nPo; ++j) {
@@ -523,22 +702,26 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             Cudd_Quit(_dd);
             Abc_NtkDelete(pNtkOut);
             
-            
-            for(nCnt=0; cCnt<Abc_NtkPoNum(csts); ++cCnt) {
-                
+            for(nCnt=0; nCnt<Abc_NtkPoNum(nsts); ++nCnt) {
+                // cout << "@nst " << nCnt << endl;
                 if(i == nTimeframe-1) nstName = string("*");
                 else nstName = sHead + to_string(i+1) + uds + to_string(nCnt);
                 
-                tmp1 = Abc_NtkPo(pNtkCat, nPo+cCnt);
-                tmp2 = Abc_NtkPo(pNtkCat, nPo+Abc_NtkPoNum(csts)+nCnt);
+                tmp1 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, nPo+cCnt));
+                tmp2 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, nPo+Abc_NtkPoNum(csts)+nCnt));
                 tmp1 = Abc_AigAnd((Abc_Aig_t*)pNtkCat->pManFunc, tmp1, tmp2);
                 tmp2 = Abc_NtkPo(pNtkCat, Abc_NtkPoNum(pNtkCat)-1);
                 Abc_ObjRemoveFanins(tmp2);
                 Abc_ObjAddFanin(tmp2, tmp1);
                 
-                pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-1, Abc_NtkPoNum(pNtkCat));
-                for(size_t j=0; j<nVar*i; ++j)
-                    assert(Abc_NtkQuantify(pNtkOut, 0, j, 0));
+                //pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-1, Abc_NtkPoNum(pNtkCat));
+                pNtkOut = ntkCone(pNtkCat, Abc_NtkPoNum(pNtkCat)-1);
+                //for(size_t j=0; j<nVar*i; ++j)
+                //    assert(Abc_NtkQuantify(pNtkOut, 0, j, 0));
+                pNtkOut = ntkToLogic(pNtkOut);
+                for(size_t j=0; j<minterm.size(); ++j)
+                    Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkOut, j), (int)minterm[j]);
+                pNtkOut = ntkStrash(pNtkOut);
                 
                 _dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtkOut, 10000000, 1, 0, 0, 0);
                 path = Cudd_bddTransfer(_dd, dd, (DdNode *)Abc_ObjGlobalBdd(Abc_NtkPo(pNtkOut, 0)));
@@ -548,16 +731,12 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                 Cudd_Quit(_dd);
                 Abc_NtkDelete(pNtkOut);
                 
-                
                 if(path != b0) {  // transition exist
-                    
                     DdNode **a = new DdNode*[nb+1];
                     for(size_t j=0; j<nb+1; ++j)
                         a[j] = Cudd_bddIthVar(dd, (i+1)*nVar+j);
                     
                     G = b0;  Cudd_Ref(G);
-                    
-                    
                     for(size_t k=0; k<2; ++k) {
                         bddNotVec(oFuncs, nPo);   // 2*negation overall
                         btmp1 = Extra_bddEncodingBinary(dd, oFuncs, nPo, a+1, nb);  Cudd_Ref(btmp1);
@@ -574,10 +753,10 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                     G = btmp1;
                     
                     while(G != b0) {
+                        // cout << cstName << " -> " << nstName << endl;
                         gen = Cudd_FirstCube(dd, G, &cube, &val);
                         
                         string trans("");
-                            
                         // input bits
                         size_t vStart = i * nVar;
                         size_t vEnd = (i+1) * nVar;
@@ -629,10 +808,11 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
         Abc_NtkDelete(pNtkCat);
         Abc_NtkDelete(nsts);
-        csts = nsts;
+        nsts = csts;
         
         for(size_t j=1; j<tVec.size(); ++j)
             cout << setw(7) << double(tVec[j]-tVec[j-1])/CLOCKS_PER_SEC << " ";
+        cout << "\n";
         
     }
     
