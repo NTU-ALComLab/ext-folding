@@ -620,7 +620,9 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             //tmp1 = Abc_NtkPo(pNtkDup, j);
             //csts = getStates(Abc_NtkCreateCone(pNtkDup, ft, "hyper", 1), nVar*i);
             //csts = getStates(Abc_NtkCreateCone(pNtkDup, Abc_ObjFanin0(tmp1), Abc_ObjName(tmp1), 1), nVar*i);
-            csts = getStates(ntkCone(pNtkDup, j), nVar*i);
+            Abc_Ntk_t *pNtkTmp = ntkCone(pNtkDup, j);
+            csts = getStates(pNtkTmp, nVar*i);
+            Abc_NtkDelete(pNtkTmp);
             
             tVec.push_back(clock());  // t2
             
