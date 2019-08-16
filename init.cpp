@@ -35,15 +35,69 @@ Abc_Ntk_t* ntkToLogic(Abc_Ntk_t *pNtk)
     Abc_NtkDelete(pNtk);
     return pNtkRes;
 }
+
+Abc_Ntk_t* ntkCof(Abc_Ntk_t *pNtk, const size_t idx, const vector<bool>& minterm)
+{
+    int i;  char charBuf[1000];
+    Abc_Ntk_t *pNtkNew;
+    Abc_Obj_t *pObj, *pObjNew;
     
+    assert(Abc_NtkCheck(pNtk) && Abc_NtkIsStrash(pNtk));
+    Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
+
+    // start the new network
+    pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    
+    sprintf(charBuf, pNtk->pName, "_cof");
+    pNtkNew->pName = Extra_UtilStrsav(charBuf);
+    
+    Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkNew);
+    
+    // create new PIs and remember them in the old PIs
+    Abc_NtkForEachCi(pNtk, pObj, i) {
+        pObjNew = Abc_NtkCreatePi(pNtkNew);
+        // remember this PI in the old PIs
+        if((i >= idx) && (i < idx+minterm.size())) {
+            pObj->pCopy = Abc_ObjNotCond(Abc_AigConst1(pNtkNew), !minterm[i-idx]);
+        } else {
+            pObj->pCopy = pObjNew;
+        }
+
+        // add name
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
+    }
+    
+    // create POs for each Ntk
+    Abc_NtkForEachCo(pNtk, pObj, i) {
+        pObjNew = Abc_NtkCreatePo(pNtkNew);
+        pObj->pCopy = pObjNew;
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
+    }
+    
+    // AddOne for each Ntk
+    Abc_AigForEachAnd(pNtk, pObj, i)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+
+    // collect POs for each Ntk
+    Abc_NtkForEachCo(pNtk, pObj, i) {
+        pObjNew = Abc_ObjChild0Copy(pObj);
+        Abc_ObjAddFanin(Abc_NtkCo(pNtkNew, i), pObjNew);
+    }
+    
+    Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
+    Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
+    assert(Abc_NtkCheck(pNtkNew));
+    
+    return pNtkNew;
+}
+
 Abc_Obj_t* bitsToCube(Abc_Ntk_t *pNtk, size_t n, Abc_Obj_t **pVars, const size_t& nVars)
 {
     assert((1<<nVars) >= n);
     Abc_Obj_t *var, *cube = Abc_AigConst1(pNtk);
     
     for(size_t i=0; i<nVars; ++i) {
-        var = pVars[i];
-        if(!(n & 1)) var = Abc_ObjNot(var);
+        var = Abc_ObjNotCond(pVars[i], !(n & 1));
         cube = Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, cube, var);
         n >>= 1;
     }
@@ -63,7 +117,7 @@ Abc_Obj_t** computeSign(Abc_Ntk_t *pNtk, const size_t& range, const bool& fAddPo
     
     char buf[1000];
     for(size_t j=0; j<na; ++j) {
-        sprintf(buf, "a_%d", j);
+        sprintf(buf, "a_%lu", j);
         Abc_Obj_t *pObj = Abc_NtkCreatePi(pNtk);
         Abc_ObjAssignName(pObj, buf, NULL);
     }
@@ -87,7 +141,7 @@ Abc_Obj_t** computeSign(Abc_Ntk_t *pNtk, const size_t& range, const bool& fAddPo
         A[j] = cube;
         
         if(fAddPo) {
-            sprintf(buf, "A_%d", j);
+            sprintf(buf, "A_%lu", j);
             var = Abc_NtkCreatePo(pNtk);
             Abc_ObjAssignName(var, buf, NULL);
             Abc_ObjAddFanin(var, cube);
@@ -122,7 +176,7 @@ Abc_Obj_t* getNtkIthVar(Abc_Ntk_t *pNtk, const size_t i)
 {
     if(i < Abc_NtkPiNum(pNtk)) return Abc_NtkPi(pNtk, i);
     char buf[1000];
-    sprintf(buf, "new_%d", i);
+    sprintf(buf, "new_%lu", i);
     Abc_Obj_t *pObj = Abc_NtkCreatePi(pNtk);
     Abc_ObjAssignName(pObj, buf, NULL);
     return pObj;
@@ -277,7 +331,7 @@ Abc_Ntk_t* myMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl)
     assert(Abc_NtkPiNum(pNtk1) == Abc_NtkPiNum(pNtk1));
     assert(Abc_NtkPoNum(pNtk1) == 1);
     
-    int i;  char Buffer[1000];
+    int i;
     Abc_Ntk_t *pNtkNew;
     Abc_Obj_t *pObj, *pObjNew;
     
@@ -336,7 +390,7 @@ Abc_Ntk_t* getStates(Abc_Ntk_t *pNtk, const size_t level)
     assert(checkNtk(pNtk));
     
     int i;  char buf[1000];
-    Abc_Obj_t *tmp1, *tmp2;
+    Abc_Obj_t *pObj;
     vector<bool> minterm(level, false);
     bool next = true;
     size_t iter = 0;
@@ -344,19 +398,22 @@ Abc_Ntk_t* getStates(Abc_Ntk_t *pNtk, const size_t level)
     Abc_Ntk_t *sts = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     sts->pName = Extra_UtilStrsav("states");
     
-    Abc_NtkForEachCi(pNtk, tmp1, i)
-        Abc_ObjAssignName(Abc_NtkCreatePi(sts), Abc_ObjName(tmp1), NULL);
+    Abc_NtkForEachCi(pNtk, pObj, i)
+        Abc_ObjAssignName(Abc_NtkCreatePi(sts), Abc_ObjName(pObj), NULL);
     
     //cout << "start!!" << endl;
     while(next) {
         // build miter
+        pNtkDup = ntkCof(pNtk, 0, minterm);
+
+        /* cofactor on logic ntk */
+/*
         pNtkDup = Abc_NtkToLogic(pNtk);
-        
         for(i=0; i<minterm.size(); ++i)
             Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkDup, i), (int)minterm[i]);
-        
         pNtkDup = ntkStrash(pNtkDup);
-        
+*/
+
         pNtkMiter = myMiter(pNtk, pNtkDup, 1);
         //pNtkMiter = Abc_NtkMiter(pNtk, pNtkDup, 0, 0, 0, 0);
         //Abc_ObjXorFaninC(Abc_NtkPo(pNtkMiter, 0), 0);
@@ -373,14 +430,14 @@ Abc_Ntk_t* getStates(Abc_Ntk_t *pNtk, const size_t level)
         Abc_AigConst1(pNtkMiter)->pCopy = Abc_AigConst1(sts);
         for(i=0; i<Abc_NtkPiNum(sts); ++i)
             Abc_NtkPi(pNtkMiter, i)->pCopy = Abc_NtkPi(sts, i);
-        Abc_AigForEachAnd(pNtkMiter, tmp1, i)
-            tmp1->pCopy = Abc_AigAnd((Abc_Aig_t*)sts->pManFunc, 
-                                 Abc_ObjChild0Copy(tmp1), 
-                                 Abc_ObjChild1Copy(tmp1));
-        tmp1 = Abc_NtkCreatePo(sts);
-        sprintf(buf, "S%d", iter);
-        Abc_ObjAssignName(tmp1, buf, NULL);
-        Abc_ObjAddFanin(tmp1, Abc_ObjChild0Copy(Abc_NtkPo(pNtkMiter, 0)));
+        Abc_AigForEachAnd(pNtkMiter, pObj, i)
+            pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)sts->pManFunc, 
+                                 Abc_ObjChild0Copy(pObj), 
+                                 Abc_ObjChild1Copy(pObj));
+        pObj = Abc_NtkCreatePo(sts);
+        sprintf(buf, "S%lu", iter);
+        Abc_ObjAssignName(pObj, buf, NULL);
+        Abc_ObjAddFanin(pObj, Abc_ObjChild0Copy(Abc_NtkPo(pNtkMiter, 0)));
         Abc_AigCleanup((Abc_Aig_t*)sts->pManFunc);
         
         // get next minterm
@@ -439,7 +496,7 @@ Abc_Ntk_t* getPartNtk(Abc_Ntk_t *pNtk, const size_t start, const size_t end)
     return pNtkNew;
 }
 
-Abc_Ntk_t* concat(Abc_Ntk_t **pNtks, const size_t& nNtks)
+Abc_Ntk_t* ntkConcat(Abc_Ntk_t **pNtks, const size_t& nNtks)
 {
     if(!nNtks || !pNtks) return NULL;
     
@@ -562,7 +619,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     string spc = string(" "), uds = string("_"), sHead = string("S");
     string cstName, nstName;
     
-    Abc_Ntk_t *csts, *nsts = createDummyState();
+    Abc_Ntk_t *csts = NULL, *nsts = createDummyState();
     size_t cCnt = 0, nCnt;
     
     
@@ -647,11 +704,11 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_Ntk_t *ntkToCat[3];
         ntkToCat[0] = getPartNtk(pNtkDup, i*nPo, (i+1)*nPo);
         ntkToCat[1] = csts;  ntkToCat[2] = nsts;
-        Abc_Ntk_t *pNtkCat = concat(ntkToCat, 3);
+        Abc_Ntk_t *pNtkCat = ntkConcat(ntkToCat, 3);
         Abc_NtkDelete(ntkToCat[0]);
         
         for(size_t j=0; j<nPo; ++j) {
-            char buf[100];  sprintf(buf, "PO%d", j);
+            char buf[100];  sprintf(buf, "PO%lu", j);
             Abc_ObjAssignName(Abc_NtkCreatePo(pNtkCat), buf, NULL);
         }
         
@@ -659,8 +716,9 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             // cout << "@cst " << cCnt << " / " << Abc_NtkPoNum(csts) << endl;
             cstName = sHead + to_string(i) + uds + to_string(cCnt);
             
-            /* method 1: exist quantify
-            tmp1 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, nPo+cCnt));
+            /* method 1: exist quantify */
+/*
+            tmp1 = Abc_ObjChild0(Abc_NtkP｛o(pNtkCat, nPo+cCnt));
             for(size_t j=0; j<nPo; ++j) {
                 tmp2 = Abc_ObjChild0(Abc_NtkPo(pNtkCat, j));
                 tmp2 = Abc_AigAnd((Abc_Aig_t*)pNtkCat->pManFunc, tmp1, tmp2);
@@ -672,7 +730,7 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             Abc_Ntk_t *pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo, Abc_NtkPoNum(pNtkCat));
             for(size_t j=0; j<nVar*i; ++j)
                 assert(Abc_NtkQuantify(pNtkOut, 0, j, 0));
-            */ 
+*/
             
             /* method 2: cube cofactor */
             vector<bool> minterm(nVar*i, false);
@@ -687,11 +745,19 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             }
             Abc_NtkCheck(pNtkCat);
             Abc_Ntk_t *pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-nPo, Abc_NtkPoNum(pNtkCat));
+            
+            pNtkTmp = ntkCof(pNtkOut, 0, minterm);
+            Abc_NtkDelete(pNtkOut);
+            pNtkOut = pNtkTmp;
+            
+            /* cofactor on logic ntk */
+/*
             pNtkOut = ntkToLogic(pNtkOut);
             for(size_t j=0; j<minterm.size(); ++j)
                 Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkOut, j), (int)minterm[j]);
             pNtkOut = ntkStrash(pNtkOut);
             assert(Abc_NtkCiNum(pNtkCat) == Abc_NtkCiNum(pNtkOut));
+*/
             
             DdManager *_dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtkOut, 10000000, 1, 0, 0, 0);
             for(size_t j=0; j<nPo; ++j) {
@@ -703,8 +769,9 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
             Abc_NtkFreeGlobalBdds(pNtkOut, 0);
             Cudd_Quit(_dd);
             Abc_NtkDelete(pNtkOut);
-            
+
             for(nCnt=0; nCnt<Abc_NtkPoNum(nsts); ++nCnt) {
+
                 // cout << "@nst " << nCnt << endl;
                 if(i == nTimeframe-1) nstName = string("*");
                 else nstName = sHead + to_string(i+1) + uds + to_string(nCnt);
@@ -718,13 +785,24 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                 
                 //pNtkOut = getPartNtk(pNtkCat, Abc_NtkPoNum(pNtkCat)-1, Abc_NtkPoNum(pNtkCat));
                 pNtkOut = ntkCone(pNtkCat, Abc_NtkPoNum(pNtkCat)-1);
+                
                 //for(size_t j=0; j<nVar*i; ++j)
                 //    assert(Abc_NtkQuantify(pNtkOut, 0, j, 0));
+                
+                cout << "_cof..." << flush;
+                pNtkTmp = ntkCof(pNtkOut, 0, minterm);
+                cout << "done" << endl;
+                Abc_NtkDelete(pNtkOut);
+                pNtkOut = pNtkTmp;
+
+                /* cofactor on logic ntk */
+/*              
                 pNtkOut = ntkToLogic(pNtkOut);
                 for(size_t j=0; j<minterm.size(); ++j)
                     Abc_ObjReplaceByConstant(Abc_NtkPi(pNtkOut, j), (int)minterm[j]);
                 pNtkOut = ntkStrash(pNtkOut);
-                
+*/
+
                 _dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtkOut, 10000000, 1, 0, 0, 0);
                 path = Cudd_bddTransfer(_dd, dd, (DdNode *)Abc_ObjGlobalBdd(Abc_NtkPo(pNtkOut, 0)));
                 Cudd_Ref(path);
@@ -797,7 +875,6 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
                     delete [] a;
                 }
                 
-                
                 Cudd_RecursiveDeref(dd, path);
             }
             
@@ -833,72 +910,10 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     delete [] oFuncs;
     delete [] b;
     Cudd_Quit(dd);
-    Abc_NtkDelete(csts);
+    if(csts) Abc_NtkDelete(csts);
     Abc_NtkDelete(pNtkDup);
     
     return 0;
-    
-
-    /* debug: AND signature to every PO
-    Abc_Ntk_t *pNtkDup = Abc_NtkDup(pNtk);
-    size_t nB = nPo ? (size_t)ceil(log2(double(nPo*2))) : 0;
-    Abc_Obj_t **B = computeSign(pNtkDup, nPo*2);
-    
-    Abc_Obj_t *pAnd, *pCo;
-    for(size_t t=0; t<nTimeframe; ++t) for(size_t p=0; p<nPo; ++p) {
-        //cout << t << "_" << p << endl;
-        pCo = Abc_NtkCo(pNtkDup, nPo*t+p);
-        pAnd = Abc_AigAnd((Abc_Aig_t*)pNtkDup->pManFunc, Abc_ObjChild0(pCo), B[p]);
-        Abc_ObjRemoveFanins(pCo);
-        Abc_ObjAddFanin(pCo, pAnd);
-    }
-    */
-
-    /* here!!
-    // init new pNtk
-    Abc_Obj_t *pObj, *pObjNew;
-    Abc_Ntk_t *pNtkUni = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
-    Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkUni);
-    
-    // create new PIs and remember them in the old PIs
-    Abc_NtkForEachCi(pNtk, pObj, i) {
-        pObjNew = Abc_NtkCreatePi(pNtkUni);
-        pObj->pCopy = pObjNew;
-        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
-    }
-    
-    // create a new PO
-    //Abc_NtkCreatePo(pNtkUni);
-    
-    // AddOne for each Ntk
-    Abc_AigForEachAnd(pNtk, pObj, i)
-        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkUni->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
-    
-    
-    // compute signature
-    //size_t nB = nPo ? (size_t)ceil(log2(double(nPo))) : 0;
-    Abc_Obj_t **B = computeSign(pNtkUni, nPo, false);
-    Abc_Obj_t **A = new Abc_Obj_t*[nPo];
-    for(i=0; i<nPo; ++i)
-        A[i] = Abc_ObjChild0Copy(Abc_NtkPo(pNtk, nPo*2+i));
-    pObj = aigDot(pNtkUni, A, B, nPo);
-    Abc_ObjAddFanin(Abc_NtkCreatePo(pNtkUni), pObj);
-    //Abc_ObjAddFanin(Abc_NtkCreatePo(pNtkUni), A[0]);
-    Abc_ObjAssignName(Abc_NtkPo(pNtkUni, 0), "yo", NULL);
-    delete [] B;
-    delete [] A;
-    
-    //Abc_AigCleanup((Abc_Aig_t*)pNtkUni->pManFunc);
-    assert(Abc_NtkCheck(pNtkUni));
-    
-    //Abc_NtkDelete(pNtkDup);
-    //Abc_NtkDelete(pNtk);
-    //Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
-    //Abc_FrameReplaceCurrentNetwork(pAbc, pNtkDup);
-    Abc_FrameReplaceCurrentNetwork(pAbc, pNtkUni);
-    cout << "done..." << endl;
-    return 0;
-    */
 }
 
 // called during ABC startup
