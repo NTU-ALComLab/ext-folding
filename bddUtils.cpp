@@ -1,5 +1,7 @@
 #include "ext-folding/utils.h"
 
+namespace bddUtils {
+
 // print Cudd manager info.
 void printBddManInfo(DdManager *dd)
 {
@@ -28,7 +30,7 @@ void showBdd(DdManager *dd, DdNode **pNodeVec, int nNode, string fileName)
 
 // compute signature
 // caution: remember to free the array afterwards!!!
-DdNode** computeSign(DdManager *dd, const size_t &range)
+DdNode** computeSign(DdManager *dd, cuint &range)
 {
     // introduce variable alpha(a)
     // #a = log2(ceil(range))
@@ -66,7 +68,7 @@ DdNode** computeSign(DdManager *dd, const size_t &range)
 
 // compute inner product(dot) of 2 given bdd array
 // return a bdd node with ref = 1
-DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, const size_t& len)
+DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len)
 {
     DdNode *ret = Cudd_ReadLogicZero(dd);  Cudd_Ref(ret);
     DdNode *tmp1, *tmp2;
@@ -82,39 +84,20 @@ DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, const size_t& len)
 
 
 // negate an array of bdd
-void bddNotVec(DdNode **vec, const size_t& len)
+void bddNotVec(DdNode **vec, cuint& len)
 {
     for(size_t i=0; i<len; ++i)
         vec[i] = Cudd_Not(vec[i]);
 }
 
-/* useless
-st__table* bddCut(DdManager *dd, DdNode *f, int lev)
-{
-    // var declare
-    st__table *cut;
-    st__generator *gen;
-    DdNode *kNode, *vNode;
-    
-    // perform cut
-    cut = Extra_bddNodePathsUnderCut(dd, f, lev);
-    st__foreach_item(cut, gen, (const char**)&kNode, (char**)&vNode) {
-        cout << Cudd_Regular(vNode)->ref << " -> ";
-        Cudd_Ref(vNode);
-        cout << Cudd_Regular(vNode)->ref << "\n";
-    }
-    return cut;
-}
-*/
-
-void bddDerefVec(DdManager *dd, DdNode **v, const size_t& len)
+void bddDerefVec(DdManager *dd, DdNode **v, cuint& len)
 {
     for(size_t i=0; i<len; ++i)
         Cudd_RecursiveDeref(dd, v[i]);
 }
 
 
-void bddFreeVec(DdManager *dd, DdNode **v, const size_t& len)
+void bddFreeVec(DdManager *dd, DdNode **v, cuint& len)
 {
     bddDerefVec(dd, v, len);
     delete [] v;
@@ -138,3 +121,5 @@ void bddFreeTable(DdManager *dd, st__table *tb)
         
     st__free_table(tb);
 }
+
+} // unnamed namespace
