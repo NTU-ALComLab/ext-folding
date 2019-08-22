@@ -12,11 +12,11 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     int c;
     Abc_Ntk_t *pNtk;
-    int nTimeFrame = -1;
     bool mode = false, verbosity = true;
     vector<string> stg;
     ostream *fp;
-    size_t nCi, nPi, nCo, nPo, nSts;
+    int nTimeFrame = -1, nSts = -1;
+    size_t nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "tmvh")) != EOF) {
@@ -59,9 +59,9 @@ int tFold_Command( Abc_Frame_t * pAbc, int argc, char ** argv )
     assert(nCi == nPi * nTimeFrame);
     assert(nCo == nPo * nTimeFrame);
 
-    if(mode) nSts = bddFold(pNtk, nTimeFrame, stg, verbosity);
+    if(!mode) nSts = bddFold(pNtk, nTimeFrame, stg, verbosity);
     //else nSts = aigFold(pNtk, nTimeFrame, stg, verbosity);
-
+    
     if(nSts > 0) writeKiss(nPi, nPo, nSts, stg, *fp);
     else cerr << "something went wrong in timefold!!";
     
@@ -103,6 +103,6 @@ struct registrar
     {
         Abc_FrameAddInitializer(&frame_initializer);
     }
-} fold_registrar;
+} timeFold_registrar;
 
 } // unnamed namespace

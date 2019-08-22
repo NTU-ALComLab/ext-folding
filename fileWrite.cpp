@@ -14,7 +14,8 @@ void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostr
     fp << ".e\n";
 }
 
-void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string> stg)
+// caution: G will be dereferenced
+void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string>& stg)
 {
     string cstName = "S" + to_string(i) + "_" + to_string(cCnt);
     string nstName = (i == nTimeFrame-1) ? string("*") : ("S"+to_string(i+1)+"_"+to_string(nCnt));
@@ -59,6 +60,7 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
         
         Cudd_GenFree(gen);
     }
+    Cudd_RecursiveDeref(dd, G);
 }
 
 } // end namespace fileWrite

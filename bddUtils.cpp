@@ -1,6 +1,7 @@
 #include "ext-folding/utils.h"
 
-namespace bddUtils {
+namespace bddUtils
+{
 
 // print Cudd manager info.
 void printBddManInfo(DdManager *dd)
@@ -66,7 +67,7 @@ DdNode** computeSign(DdManager *dd, cuint &range)
 }
 
 
-// compute inner product(dot) of 2 given bdd array
+// compute inner product(dot) of 2 given bdd arrays
 // return a bdd node with ref = 1
 DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len)
 {
@@ -83,7 +84,7 @@ DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len)
 }
 
 
-// negate an array of bdd
+// negate an array of bdd nodes
 void bddNotVec(DdNode **vec, cuint& len)
 {
     for(size_t i=0; i<len; ++i)
@@ -95,7 +96,6 @@ void bddDerefVec(DdManager *dd, DdNode **v, cuint& len)
     for(size_t i=0; i<len; ++i)
         Cudd_RecursiveDeref(dd, v[i]);
 }
-
 
 void bddFreeVec(DdManager *dd, DdNode **v, cuint& len)
 {

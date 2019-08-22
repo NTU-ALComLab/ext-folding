@@ -32,12 +32,12 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         nCnt = 0;
         st__foreach_item(nsts, nGen, (const char**)&nKNode, (char**)&nVNode) {
             path = Cudd_bddAnd(dd, cVNode, nVNode);  Cudd_Ref(path);
-            
+
             if(path != b0) {  // transition exist
                 tmp1 = Cudd_Cofactor(dd, nVNode, bCube);  Cudd_Ref(tmp1);
                 Cudd_RecursiveDeref(dd, path);
                 path = tmp1;
-                
+
                 // encode output on/off-sets
                 G = b0;  Cudd_Ref(G);
                 for(size_t k=0; k<2; ++k) {
@@ -49,21 +49,21 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                     Cudd_RecursiveDeref(dd, tmp1);
                     G = tmp2;
                 }
-                
+
                 // ANDing transition constraint
                 tmp1 = Cudd_bddAnd(dd, G, path);  Cudd_Ref(tmp1);
                 Cudd_RecursiveDeref(dd, G);
                 G = tmp1;
-                
+
                 // add transition (cst->nst) to STG
-                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);
-                
-                Cudd_RecursiveDeref(dd, G);
+                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
+
             }
-            
+
             Cudd_RecursiveDeref(dd, path);
             ++nCnt;
         }
+
         Cudd_RecursiveDeref(dd, bCube);
         bddDerefVec(dd, oFuncs, nPo);
         ++cCnt;
@@ -117,12 +117,12 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
                 pFuncs[pCnt++] = nVNode;
             assert(pCnt == nFuncs);
             if(pCnt == 1) assert(pFuncs[0] == b1);
-            
+
             // variables to encode pFuncs
             size_t na = (size_t)ceil(log2(double(nFuncs))) + 2;
             DdNode **a = new DdNode*[na];
             for(size_t j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+nB+j);
-            
+
             // hyper-function encoding of output functions of i^th time-frame
             DdNode *ft = bddDot(dd, pNodeVec+i*nPo, B, nPo);
             tmp1 = Cudd_bddAnd(dd, Cudd_Not(a[0]), ft);  Cudd_Ref(tmp1);
@@ -133,28 +133,28 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
             tmp1 = Extra_bddEncodingBinary(dd, pFuncs, nFuncs, a+1, na-1);  Cudd_Ref(tmp1);
             tmp2 = Cudd_bddAnd(dd, a[0], tmp1);  Cudd_Ref(tmp2);
             Cudd_RecursiveDeref(dd, tmp1);
-            
+
             // ORing 2 hyper-functions
             tmp1 = Cudd_bddOr(dd, ft, tmp2);  Cudd_Ref(tmp1);
             
             Cudd_RecursiveDeref(dd, ft);
             Cudd_RecursiveDeref(dd, tmp2);
-            
+
             tVec.push_back(clock());  // t1: after building hyper-function
             
             // cut set enumeration
             csts = Extra_bddNodePathsUnderCut(dd, tmp1, nVar*i);
-            
+
             tVec.push_back(clock());  // t2: after BDD cut
             
             Cudd_RecursiveDeref(dd, tmp1);
-            
+
             // free arrays
             delete [] a;
             delete [] pFuncs;
         }
         else csts = createDummyState(dd);  // i==0
-        
+
         if(tVec.empty()) for(size_t j=0; j<3; ++j) tVec.push_back(clock());
         
         stsSum += st__count(csts);

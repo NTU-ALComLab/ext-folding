@@ -40,5 +40,5 @@ namespace fileWrite
 {
 // fileWrite.cpp
 void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostream& fp);
-void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string> stg);
+void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string>& stg);
 } // end namespace fileWrite
