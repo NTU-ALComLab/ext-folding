@@ -1,6 +1,6 @@
 #include "ext-folding/timeFold/utils.h"
 
-namespace bddUtils
+namespace timeFold::bddUtils
 {
 
 // build transitions of the states from consecutive time-frames

@@ -1,6 +1,6 @@
 #include "ext-folding/timeFold/utils.h"
 
-namespace fileWrite
+namespace timeFold::fileWrite
 {
     
 void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostream& fp)

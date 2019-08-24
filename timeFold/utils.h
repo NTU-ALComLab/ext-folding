@@ -10,9 +10,15 @@
 #include <ctime>
 #include <iomanip>
 
+namespace timeFold {}  // forward declaration of timeFold namespace
+
 using namespace std;
+using namespace timeFold;
 
 typedef const size_t cuint;
+
+namespace timeFold
+{
 
 namespace bddUtils
 {
@@ -33,7 +39,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
 } // end namespace bddUtils
 
 
-//namespace aigUtils {}
+namespace aigUtils {}
 
 
 namespace fileWrite
@@ -42,3 +48,5 @@ namespace fileWrite
 void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostream& fp);
 void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string>& stg);
 } // end namespace fileWrite
+
+} // end namespace timeFold
