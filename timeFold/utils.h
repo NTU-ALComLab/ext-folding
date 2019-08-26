@@ -10,10 +10,7 @@
 #include <ctime>
 #include <iomanip>
 
-namespace timeFold {}  // forward declaration of timeFold namespace
-
 using namespace std;
-using namespace timeFold;
 
 typedef const size_t cuint;
 

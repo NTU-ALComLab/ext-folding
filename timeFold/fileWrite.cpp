@@ -32,9 +32,9 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
         size_t vEnd = (i+1) * nPi;
         for(size_t m=0; m<Cudd_ReadSize(dd); ++m) {
             if((m>=vStart) && (m<vEnd))
-                trans += (cube[m]==2) ? string("-") : to_string(cube[m]);
+                trans += (cube[cuddI(dd, m)]==2) ? string("-") : to_string(cube[cuddI(dd, m)]);
             else
-                cube[m] = 2;
+                cube[cuddI(dd, m)] = 2;
         }
         
         // states
@@ -42,11 +42,14 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
         
         // output bits
         tmp1 = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(tmp1);
+
         for(size_t k=0; k<nPo; ++k) {
-            tmp2 = Cudd_Cofactor(dd, oFuncs[k], tmp1);  Cudd_Ref(tmp2);
-            if(tmp2 == b0) trans += "0";
-            else trans += "1";
-            Cudd_RecursiveDeref(dd, tmp2);
+            if(oFuncs) {
+                tmp2 = Cudd_Cofactor(dd, oFuncs[k], tmp1);  Cudd_Ref(tmp2);
+                if(tmp2 == b0) trans += "0";
+                else trans += "1";
+                Cudd_RecursiveDeref(dd, tmp2);
+            } else trans += "-";
         }
         
         stg.push_back(trans);

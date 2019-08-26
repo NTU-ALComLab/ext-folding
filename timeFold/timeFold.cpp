@@ -1,5 +1,7 @@
 #include "ext-folding/timeFold/utils.h"
 
+using namespace timeFold;
+
 namespace timeFold
 {
 
@@ -59,7 +61,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbosity);
     
     if(nSts > 0) fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
-    else cerr << "Something went wrong in timefold!!" << endl;
+    else cerr << "Something went wrong in time_fold!!" << endl;
     
     if(fp != &cout) delete fp;
     Abc_NtkDelete(pNtk);
@@ -67,7 +69,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: timefold [-t <num>] [-mv] <file>\n");
+    Abc_Print(-2, "usage: time_fold [-t <num>] [-mv] <file>\n");
     Abc_Print(-2, "\t        fold the time-frame expanded circuit and transform it into a STG\n");
     Abc_Print(-2, "\t-t    : number of time-frames to be folded\n");
     Abc_Print(-2, "\t-m    : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
@@ -80,7 +82,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "tFold", "timefold", tFold_Command, 0);
+    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_fold", tFold_Command, 0);
 }
 
 // called during ABC termination
@@ -101,4 +103,4 @@ struct registrar
     }
 } timeFold_registrar;
 
-} // unnamed namespace
+} // end namespace timeFold

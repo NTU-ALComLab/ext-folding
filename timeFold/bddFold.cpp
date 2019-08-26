@@ -1,5 +1,7 @@
 #include "ext-folding/timeFold/utils.h"
 
+using namespace timeFold;
+
 namespace timeFold::bddUtils
 {
 
@@ -75,7 +77,11 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity)
 {
     // initialize bdd manger (disable var. reordering)
-    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, 10000000, 1, 0, 0, 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
+    if(!dd) {
+        cerr << "#nodes exceeds the maximum limit." << endl;
+        return 0;
+    }
     
     // get basic settings
     cuint nCo = Abc_NtkCoNum(pNtk);
