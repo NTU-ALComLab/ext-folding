@@ -35,15 +35,17 @@ static Abc_Ntk_t* ntkPrepro(Abc_Ntk_t *pNtk, cuint nTimeFrame)
 
     // rounding up #PI
     size_t n = Abc_NtkPiNum(pNtkRes) % nTimeFrame;
-    for(size_t i=0; i<n; ++i)
-        assert(Abc_NtkCreatePi(pNtkRes));
+    char buf[1000];
+    if(n) for(size_t i=0; i<nTimeFrame-n; ++i) {
+        sprintf(buf, "dummy_%lu", i);
+        Abc_ObjAssignName(Abc_NtkCreatePi(pNtkRes), buf, NULL);
+    }
 
     Abc_AigCleanup((Abc_Aig_t*)pNtkRes->pManFunc);
     assert(Abc_NtkCheck(pNtkRes));
     return pNtkRes;
 }
 
-// TODO: verify equivalence
 int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
@@ -109,10 +111,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     
     if(nSts > 0) {
         fileWrite::writeKiss(nPi, nCo, nSts, stg, *fp);
-        //if(cec) checkEqv(pNtk, perm, stg); 
-        // pNtk = Io_Read( pFileName, Io_ReadFileType(pFileName), fCheck, fBarBufs );
-        // Abc_NtkFrames( pNtk, nFrames, fInitial, fVerbose ); (need strash)
-        // Abc_NtkCecFraig( pNtk1, pNtk2, nSeconds, fVerbose );
+        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;

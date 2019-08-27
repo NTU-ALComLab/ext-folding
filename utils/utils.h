@@ -33,7 +33,12 @@ void bddFreeTable(DdManager *dd, st__table *tb);
 } // end namespace bddUtils
 
 
-namespace aigUtils {}
+namespace aigUtils
+{
+// aigUtils.cpp
+Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, const size_t start, const size_t end);
+Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm);
+} // end namespace aigUtils
 
 
 namespace fileWrite

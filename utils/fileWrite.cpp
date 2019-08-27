@@ -12,6 +12,7 @@ void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostr
     fp << ".r " << "S0_0" << "\n";
     for(string trans: stg) fp << trans << "\n";
     fp << ".e\n";
+    fp.flush();
 }
 
 // caution: G will be dereferenced
