@@ -84,6 +84,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
 {
     // initialize bdd manger
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, (int)reOrd, 0);
+    //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
         return 0;
@@ -109,24 +110,38 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
     
     // reorder bdd
     if(reOrd) {
+/*        
         Cudd_AutodynEnable(dd, rt);
         // fixed B var. order
         for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
             assert(Cudd_bddBindVar(dd, i));
         Cudd_ReduceHeap(dd, rt, 1);
         Cudd_AutodynDisable(dd);
+*/
+
+        cout << Cudd_ReadNodeCount(dd) << " -> ";
+
+        // build the group tree for reordering and free it afterwards
+        if(dd->tree) Cudd_FreeTree(dd);
+        dd->tree = Mtr_InitGroupTree(0, initVarSize);
+        dd->tree->index = dd->invperm[0];
+        Cudd_ReduceHeap(dd, rt, 1);
+        if(dd->tree) Cudd_FreeTree(dd);
+
+        cout << Cudd_ReadNodeCount(dd) << endl;
 
         // check var. order
+        //for(i=0; i<Cudd_ReadSize(dd); ++i)
+        //    cout << i << " -> " << cuddI(dd, i) << endl;
         for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
             assert(i == cuddI(dd, i));
     }
-    showBdd(dd, &H, 1, reOrd ? "a" : "b");
+    //showBdd(dd, &H, 1, reOrd ? "a" : "b");
     
     // collecting states at each timeframe
     size_t stsSum = 1;
     st__table *csts = createDummyState(dd), *nsts;
     
-
     for(i=0; i<nTimeFrame; ++i) {
         vector<clock_t> tVec;
 
@@ -176,4 +191,4 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
 }
 
 
-} // end namespace bddUtils
+} // end namespace timeMux::bddUtils

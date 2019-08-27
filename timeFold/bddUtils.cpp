@@ -122,4 +122,4 @@ void bddFreeTable(DdManager *dd, st__table *tb)
     st__free_table(tb);
 }
 
-} // unnamed namespace
+} // unnamed namespace timeFold::bddUtils

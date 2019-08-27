@@ -201,4 +201,4 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
 }
 
 
-} // end namespace bddUtils
+} // end namespace timeFold::bddUtils
