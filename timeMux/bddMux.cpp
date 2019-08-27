@@ -1,9 +1,9 @@
-#include "ext-folding/timeMux/utils.h"
+#include "ext-folding/timeMux/timeMux.h"
 
 using namespace timeMux;
-using namespace timeFold::bddUtils;
+using namespace bddUtils;
 
-namespace timeMux::bddUtils
+namespace timeMux
 {
 
 // build transitions of the states from consecutive time-frames
@@ -63,7 +63,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 G = tmp1;
 
                 // add transition (cst->nst) to STG
-                timeFold::fileWrite::addOneTrans(dd, G, oFuncs, nPi, nCo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
+                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nCo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
 
             }
 
@@ -80,10 +80,10 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 }
 
 // TODO: rememeber the variable permutation
-int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool reOrd, const bool verbosity, const Cudd_ReorderingType rt)
+int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm, const bool verbosity, const Cudd_ReorderingType rt)
 {
     // initialize bdd manger
-    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, (int)reOrd, 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, (int)(perm!=NULL), 0);
     //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
@@ -109,7 +109,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
     DdNode *H = bddDot(dd, pNodeVec, B, nCo);
     
     // reorder bdd
-    if(reOrd) {
+    if(perm) {
 /*        
         Cudd_AutodynEnable(dd, rt);
         // fixed B var. order
@@ -119,8 +119,6 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
         Cudd_AutodynDisable(dd);
 */
 
-        cout << Cudd_ReadNodeCount(dd) << " -> ";
-
         // build the group tree for reordering and free it afterwards
         if(dd->tree) Cudd_FreeTree(dd);
         dd->tree = Mtr_InitGroupTree(0, initVarSize);
@@ -128,13 +126,15 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
         Cudd_ReduceHeap(dd, rt, 1);
         if(dd->tree) Cudd_FreeTree(dd);
 
-        cout << Cudd_ReadNodeCount(dd) << endl;
-
         // check var. order
         //for(i=0; i<Cudd_ReadSize(dd); ++i)
         //    cout << i << " -> " << cuddI(dd, i) << endl;
         for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
             assert(i == cuddI(dd, i));
+        
+        // update perm
+        for(i=0; i<initVarSize; ++i)
+            perm[i] = cuddI(dd, i);
     }
     //showBdd(dd, &H, 1, reOrd ? "a" : "b");
     
@@ -157,7 +157,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool re
         
         if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
 
-        timeMux::bddUtils::buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
+        buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
 
         tVec.push_back(clock()); // t3
         

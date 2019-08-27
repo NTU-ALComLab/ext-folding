@@ -1,8 +1,9 @@
-#include "ext-folding/timeFold/utils.h"
+#include "ext-folding/timeFold/timeFold.h"
 
 using namespace timeFold;
+using namespace bddUtils;
 
-namespace timeFold::bddUtils
+namespace timeFold
 {
 
 // build transitions of the states from consecutive time-frames
@@ -201,4 +202,4 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
 }
 
 
-} // end namespace timeFold::bddUtils
+} // end namespace timeFold

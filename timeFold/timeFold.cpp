@@ -1,4 +1,4 @@
-#include "ext-folding/timeFold/utils.h"
+#include "ext-folding/timeFold/timeFold.h"
 
 using namespace timeFold;
 
@@ -56,7 +56,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     assert(nCo == nPo * nTimeFrame);
 
-    if(!mode) nSts = bddUtils::bddFold(pNtk, nTimeFrame, stg, verbosity);
+    if(!mode) nSts = bddFold(pNtk, nTimeFrame, stg, verbosity);
     else cerr << "AIG mode currently not supported." << endl;
     //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbosity);
     
