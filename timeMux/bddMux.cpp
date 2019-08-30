@@ -16,7 +16,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     size_t cCnt = 0, nCnt = 0;
     
     DdNode **oFuncs  = (i==nTimeFrame-1) ? new DdNode*[nCo] : NULL;
-    DdNode *G, *path, *bCube, *tmp1, *tmp2;
+    DdNode *F, *G, *path, *bCube, *tmp1, *tmp2;
 
     st__foreach_item(csts, cGen, (const char**)&cKNode, (char**)&cVNode) {
         // find a path to this state, store it in cube
@@ -31,6 +31,22 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         }
         
         Cudd_GenFree(gen);
+
+        // encode output on/off-sets
+        if(oFuncs) {
+            F = b0;  Cudd_Ref(F);
+            for(size_t k=0; k<2; ++k) {
+                bddNotVec(oFuncs, nCo);   // 2*negation overall
+                tmp1 = bddDot(dd, oFuncs, B+k*nCo, nCo);
+                tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
+                
+                Cudd_RecursiveDeref(dd, F);
+                Cudd_RecursiveDeref(dd, tmp1);
+                F = tmp2;
+            }
+        } else {
+            F = b1; Cudd_Ref(F);
+        }
         
         nCnt = 0;
         st__foreach_item(nsts, nGen, (const char**)&nKNode, (char**)&nVNode) {
@@ -41,26 +57,8 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 Cudd_RecursiveDeref(dd, path);
                 path = tmp1;
 
-                // encode output on/off-sets
-                if(oFuncs) {
-                    G = b0;  Cudd_Ref(G);
-                    for(size_t k=0; k<2; ++k) {
-                        bddNotVec(oFuncs, nCo);   // 2*negation overall
-                        tmp1 = bddDot(dd, oFuncs, B+k*nCo, nCo);
-                        tmp2 = Cudd_bddOr(dd, G, tmp1);  Cudd_Ref(tmp2);
-                        
-                        Cudd_RecursiveDeref(dd, G);
-                        Cudd_RecursiveDeref(dd, tmp1);
-                        G = tmp2;
-                    }
-                } else {
-                    G = b1; Cudd_Ref(G);
-                }
-
                 // ANDing transition constraint
-                tmp1 = Cudd_bddAnd(dd, G, path);  Cudd_Ref(tmp1);
-                Cudd_RecursiveDeref(dd, G);
-                G = tmp1;
+                G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
 
                 // add transition (cst->nst) to STG
                 fileWrite::addOneTrans(dd, G, oFuncs, nPi, nCo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
@@ -71,6 +69,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
             ++nCnt;
         }
 
+        Cudd_RecursiveDeref(dd, F);
         Cudd_RecursiveDeref(dd, bCube);
         if(oFuncs) bddDerefVec(dd, oFuncs, nCo);
         ++cCnt;
@@ -82,7 +81,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm, const bool verbosity, const Cudd_ReorderingType rt)
 {
     // initialize bdd manger
-    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, (int)(perm!=NULL), 0);
+    DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, (int)(perm!=NULL), 0, 0);
     //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
@@ -98,6 +97,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     DdNode **pNodeVec = new DdNode*[nCo];
     Abc_NtkForEachCo(pNtk, pObj, i)
         pNodeVec[i] = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
+
     
     // compute signature
     size_t nB = nCo ? (size_t)ceil(log2(double(nCo*2))) : 0;
@@ -109,7 +109,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     
     // reorder bdd
     if(perm) {
-/*        
+/*
         Cudd_AutodynEnable(dd, rt);
         // fixed B var. order
         for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
@@ -130,12 +130,12 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
         //    cout << i << " -> " << cuddI(dd, i) << endl;
         for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
             assert(i == cuddI(dd, i));
-        
+
         // update perm
         for(i=0; i<initVarSize; ++i)
             perm[i] = cuddI(dd, i);
+
     }
-    //showBdd(dd, &H, 1, reOrd ? "a" : "b");
     
     // collecting states at each timeframe
     size_t stsSum = 1;

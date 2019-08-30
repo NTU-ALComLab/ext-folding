@@ -16,7 +16,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     size_t cCnt = 0, nCnt = 0;
     
     DdNode **oFuncs  = new DdNode*[nPo];
-    DdNode *G, *path, *bCube, *tmp1, *tmp2;
+    DdNode *F, *G, *path, *bCube, *tmp1, *tmp2;
 
     st__foreach_item(csts, cGen, (const char**)&cKNode, (char**)&cVNode) {
         // find a path to this state, store it in cube
@@ -31,6 +31,19 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         }
         
         Cudd_GenFree(gen);
+
+        // encode output on/off-sets
+        F = b0;  Cudd_Ref(F);
+        for(size_t k=0; k<2; ++k) {
+            bddNotVec(oFuncs, nPo);   // 2*negation overall
+            tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
+            tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
+            
+            Cudd_RecursiveDeref(dd, F);
+            Cudd_RecursiveDeref(dd, tmp1);
+            F = tmp2;
+        }
+
         
         nCnt = 0;
         st__foreach_item(nsts, nGen, (const char**)&nKNode, (char**)&nVNode) {
@@ -41,22 +54,8 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 Cudd_RecursiveDeref(dd, path);
                 path = tmp1;
 
-                // encode output on/off-sets
-                G = b0;  Cudd_Ref(G);
-                for(size_t k=0; k<2; ++k) {
-                    bddNotVec(oFuncs, nPo);   // 2*negation overall
-                    tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
-                    tmp2 = Cudd_bddOr(dd, G, tmp1);  Cudd_Ref(tmp2);
-                    
-                    Cudd_RecursiveDeref(dd, G);
-                    Cudd_RecursiveDeref(dd, tmp1);
-                    G = tmp2;
-                }
-
                 // ANDing transition constraint
-                tmp1 = Cudd_bddAnd(dd, G, path);  Cudd_Ref(tmp1);
-                Cudd_RecursiveDeref(dd, G);
-                G = tmp1;
+                G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
 
                 // add transition (cst->nst) to STG
                 fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
@@ -67,6 +66,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
             ++nCnt;
         }
 
+        Cudd_RecursiveDeref(dd, F);
         Cudd_RecursiveDeref(dd, bCube);
         bddDerefVec(dd, oFuncs, nPo);
         ++cCnt;

@@ -22,7 +22,8 @@ namespace bddUtils
 // bddUtils.cpp
 void printBddManInfo(DdManager *dd);
 void printBddNodeInfo(DdManager *dd, DdNode *pNode);
-void showBdd(DdManager *dd, DdNode **pNodeVec, int nNode, string fileName);
+void bddDumpPng(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
+void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
 DdNode** computeSign(DdManager *dd, cuint &range);
 DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len);
 void bddNotVec(DdNode **vec, cuint& len);

@@ -18,7 +18,7 @@ void printBddNodeInfo(DdManager *dd, DdNode *pNode) { Cudd_PrintDebug(dd, pNode,
 
 
 // dump a bdd into image file in .png format
-void showBdd(DdManager *dd, DdNode **pNodeVec, int nNode, string fileName)
+void bddDumpPng(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName)
 {
     FILE *dotFile = fopen((fileName+string(".dot")).c_str(), "w");
     Cudd_DumpDot(dd, nNode, pNodeVec, NULL, NULL, dotFile); // dump the function to .dot file
@@ -28,6 +28,12 @@ void showBdd(DdManager *dd, DdNode **pNodeVec, int nNode, string fileName)
     system(command.c_str());
 }
 
+void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName)
+{
+    FILE * fp = fopen((fileName+".blif").c_str(), "w");
+    assert(Cudd_DumpBlif(dd, nNode, pNodeVec, NULL, NULL, NULL, fp, 0));
+    fclose(fp);
+}
 
 // compute signature
 // caution: remember to free the array afterwards!!!

@@ -71,12 +71,12 @@ void checkEqv(Abc_Ntk_t *pNtk, size_t *perm, cuint nTimeFrame, const vector<stri
     dumpBLIF(pid);
     Abc_Ntk_t *pNtkCheck = prepNtkToCheck(nTimeFrame, perm, pid);
     
-    cout << "prep done, start checking..." << endl;
-
-    if(perm) for(size_t i=0; i<Abc_NtkCiNum(pNtk); ++i)
-        cout << i << " -> " << perm[i] << endl;;
+    //cout << "prep done, start checking..." << endl;
+    //if(perm) for(size_t i=0; i<Abc_NtkCiNum(pNtk); ++i)
+    //    cout << i << " -> " << perm[i] << endl;;
 
     // perform CEC and print message
+    cout << "EC status: ";
     Abc_NtkShortNames(pNtk);
     Abc_NtkShortNames(pNtkCheck);
     Abc_NtkCecFraig(pNtk, pNtkCheck, 50, 0);
