@@ -51,6 +51,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     int c;
     Abc_Ntk_t *pNtk;
     bool mode = false, cec = false, verbosity = true;
+    char *logFileName = NULL;
     size_t *perm = NULL;
 
     vector<string> stg;
@@ -59,17 +60,21 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     size_t nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tmrcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlmrcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
                 Abc_Print(-1, "Command line switch \"-t\" should be followed by an integer.\n");
                 goto usage;
             }
-            nTimeFrame = atoi(argv[globalUtilOptind]);
-            globalUtilOptind++;
-            if(nTimeFrame < 0)
+            nTimeFrame = atoi(argv[globalUtilOptind++]);
+            break;
+        case 'l':
+            if(globalUtilOptind >= argc) {
+                Abc_Print(-1, "Command line switch \"-l\" should be followed by a string.\n");
                 goto usage;
+            }
+            logFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
             break;
         case 'm':
             mode = !mode;
@@ -88,6 +93,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         }
     }
     
+    if(nTimeFrame < 0) goto usage;
     fp = (globalUtilOptind < argc) ? (new ofstream(argv[globalUtilOptind])) : &cout;
     
     // get pNtk
@@ -105,7 +111,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     if(perm) perm = new size_t[nCi];
 
-    if(!mode) nSts = bddMux(pNtk, nTimeFrame, stg, perm, verbosity);
+    if(!mode) nSts = bddMux(pNtk, nTimeFrame, stg, perm, verbosity, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
     //else nSts = aigFold(pNtk, nTimeFrame, stg, verbosity);
     
@@ -115,21 +121,22 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;
+    if(logFileName) ABC_FREE(logFileName);
     if(perm) delete [] perm;
     Abc_NtkDelete(pNtk);
 
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux [-t <num>] [-mrcv] <file>\n");
-    Abc_Print(-2, "\t        todo\n");
-    Abc_Print(-2, "\t-t    : number of time-frames to be folded\n");
-    Abc_Print(-2, "\t-m    : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
-    Abc_Print(-2, "\t-r    : toggles reordering of circuit inputs [default = %s]\n", perm ? "on" : "off");
-    Abc_Print(-2, "\t-c    : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
-    Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tfile  : (optional) output kiss file name\n");
-    Abc_Print(-2, "\t-h    : print the command usage\n");
+    Abc_Print(-2, "usage: time_mux [-t <num>] [-l <log_file>] [-mrcv] <kiss_file>\n");
+    Abc_Print(-2, "\t-t         : number of time-frames\n");
+    Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
+    Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
+    Abc_Print(-2, "\t-r         : toggles reordering of circuit inputs [default = %s]\n", perm ? "on" : "off");
+    Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
+    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
+    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
+    Abc_Print(-2, "\t-h         : print the command usage\n");
     return 1;
 }
 

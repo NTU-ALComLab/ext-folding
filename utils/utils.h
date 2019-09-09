@@ -49,4 +49,16 @@ void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostr
 void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string>& stg);
 } // end namespace fileWrite
 
+class TimeLogger
+{
+public:
+    TimeLogger(const string& fileName = "runtime.log", bool v = false, bool f = false);
+    ~TimeLogger();
+    void log(const string& str);
+private:
+    bool        verbose, instantFlush;
+    clock_t     start, prev;
+    ofstream    fp;
+}; // end class TimeLogger
+
 } // end namespace utils

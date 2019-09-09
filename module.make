@@ -2,6 +2,7 @@ SRC += \
     src/ext-folding/utils/bddUtils.cpp \
     src/ext-folding/utils/aigUtils.cpp \
     src/ext-folding/utils/fileWrite.cpp \
+    src/ext-folding/utils/timeLogger.cpp \
     src/ext-folding/timeFold/timeFold.cpp \
     src/ext-folding/timeFold/bddFold.cpp \
     src/ext-folding/timeFold/aigFold.cpp \

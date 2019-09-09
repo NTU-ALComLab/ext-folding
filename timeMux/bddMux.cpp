@@ -78,8 +78,10 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     if(oFuncs) delete [] oFuncs;
 }
 
-int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm, const bool verbosity, const Cudd_ReorderingType rt)
+int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
 {
+    TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
+
     // initialize bdd manger
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, (int)(perm!=NULL), 0, 0);
     //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
@@ -88,6 +90,8 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
         return 0;
     }
     
+    if(logger) logger->log("init bdd man");
+
     // get basic settings
     cuint nCo = Abc_NtkCoNum(pNtk);
     cuint initVarSize = Cudd_ReadSize(dd);
@@ -103,10 +107,12 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     size_t nB = nCo ? (size_t)ceil(log2(double(nCo*2))) : 0;
     DdNode **B = computeSign(dd, nCo*2);
     assert(initVarSize+nB == Cudd_ReadSize(dd));
+    if(logger) logger->log("prepare sign");
 
     // compute hyper-function
     DdNode *H = bddDot(dd, pNodeVec, B, nCo);
-    
+    if(logger) logger->log("build hyper");
+
     // reorder bdd
     if(perm) {
 /*
@@ -135,6 +141,8 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
         for(i=0; i<initVarSize; ++i)
             perm[i] = cuddI(dd, i);
 
+        if(logger) logger->log("reord");
+
     }
     
     // collecting states at each timeframe
@@ -149,6 +157,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
             nsts = Extra_bddNodePathsUnderCut(dd, H, nVar*(i+1));
         else
             nsts = createDummyState(dd);
+        if(logger) logger->log("cut" + to_string(i));
 
         if(tVec.empty()) for(size_t j=0; j<3; ++j) tVec.push_back(clock());
         
@@ -157,6 +166,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
         if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
 
         buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
+        if(logger) logger->log("trans" + to_string(i));
 
         tVec.push_back(clock()); // t3
         
@@ -169,6 +179,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
                 cout << setw(7) << double(tVec[j]-tVec[j-1])/CLOCKS_PER_SEC << " ";
             cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
         }
+        if(logger) logger->log("to next");
     }
     
 
@@ -185,6 +196,12 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     // free bdd manger
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
+    
+    
+    if(logger) {
+        logger->log("free memory");
+        delete logger;
+    }
 
     return stsSum;
 }
