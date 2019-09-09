@@ -24,6 +24,7 @@ void TimeLogger::log(const string& str)
     clock_t now = clock();
     double i = double(now - prev) / CLOCKS_PER_SEC;
     double e = double(now - start) / CLOCKS_PER_SEC;
+    prev = now;
 
     fp << str << "," << i << "," << e << "\n";
     if(instantFlush) fp.flush();

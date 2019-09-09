@@ -150,36 +150,26 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     st__table *csts = createDummyState(dd), *nsts;
     
     for(i=0; i<nTimeFrame; ++i) {
-        vector<clock_t> tVec;
-
         // cut set enumeration
         if(i != nTimeFrame-1)
             nsts = Extra_bddNodePathsUnderCut(dd, H, nVar*(i+1));
         else
             nsts = createDummyState(dd);
-        if(logger) logger->log("cut" + to_string(i));
+        if(logger) logger->log("cut-" + to_string(i));
 
-        if(tVec.empty()) for(size_t j=0; j<3; ++j) tVec.push_back(clock());
-        
         stsSum += st__count(csts);
         
-        if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
+        if(verbosity) cout << "@t=" << i << ":" << setw(7) << st__count(csts) << " states,";
 
         buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
-        if(logger) logger->log("trans" + to_string(i));
+        if(logger) logger->log("trans-" + to_string(i));
 
-        tVec.push_back(clock()); // t3
-        
         // replace csts with nsts, and enter next iteration
         bddFreeTable(dd, csts);
         csts = nsts;
         
-        if(verbosity) {
-            for(size_t j=1; j<tVec.size(); ++j)
-                cout << setw(7) << double(tVec[j]-tVec[j-1])/CLOCKS_PER_SEC << " ";
-            cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
-        }
-        if(logger) logger->log("to next");
+        if(verbosity) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
+        if(logger) logger->log("next-" + to_string(i));
     }
     
 
