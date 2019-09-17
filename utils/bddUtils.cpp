@@ -4,7 +4,7 @@ namespace utils::bddUtils
 {
 
 // print Cudd manager info.
-void printBddManInfo(DdManager *dd)
+void bddShowManInfo(DdManager *dd)
 {
     printf("DdManager nodes: %ld | ", Cudd_ReadNodeCount(dd));          /*Reports the number of live nodes in BDDs and ADDs*/
     printf("DdManager vars: %d | ", Cudd_ReadSize(dd));                 /*Returns the number of BDD variables in existence*/
@@ -14,7 +14,7 @@ void printBddManInfo(DdManager *dd)
 
 
 // print bdd node info.
-void printBddNodeInfo(DdManager *dd, DdNode *pNode) { Cudd_PrintDebug(dd, pNode, 2, 4); } 
+void bddShowNodeInfo(DdManager *dd, DdNode *pNode) { Cudd_PrintDebug(dd, pNode, 2, 4); } 
 
 
 // dump a bdd into image file in .png format
@@ -37,7 +37,7 @@ void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& file
 
 // compute signature
 // caution: remember to free the array afterwards!!!
-DdNode** computeSign(DdManager *dd, cuint &range)
+DdNode** bddComputeSign(DdManager *dd, cuint &range)
 {
     // introduce variable alpha(a)
     // #a = log2(ceil(range))
@@ -109,7 +109,7 @@ void bddFreeVec(DdManager *dd, DdNode **v, cuint& len)
     delete [] v;
 }
 
-st__table* createDummyState(DdManager *dd)
+st__table* bddCreateDummyState(DdManager *dd)
 {
     st__table *ret = st__init_table(st__ptrcmp, st__ptrhash);
     Cudd_Ref(b1);

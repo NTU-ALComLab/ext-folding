@@ -9,4 +9,5 @@ SRC += \
     src/ext-folding/timeMux/timeMux.cpp \
     src/ext-folding/timeMux/bddMux.cpp \
     src/ext-folding/timeMux/checkEqv.cpp \
-    src/ext-folding/sysCmd.cpp \
+    src/ext-folding/misc/sysCmd.cpp \
+    src/ext-folding/tmp_yo.cpp \

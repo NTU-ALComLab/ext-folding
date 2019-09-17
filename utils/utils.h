@@ -20,16 +20,16 @@ namespace utils
 namespace bddUtils
 {
 // bddUtils.cpp
-void printBddManInfo(DdManager *dd);
-void printBddNodeInfo(DdManager *dd, DdNode *pNode);
+void bddShowManInfo(DdManager *dd);
+void bddShowNodeInfo(DdManager *dd, DdNode *pNode);
 void bddDumpPng(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
 void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
-DdNode** computeSign(DdManager *dd, cuint &range);
+DdNode** bddComputeSign(DdManager *dd, cuint &range);
 DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len);
 void bddNotVec(DdNode **vec, cuint& len);
 void bddDerefVec(DdManager *dd, DdNode **v, cuint& len);
 void bddFreeVec(DdManager *dd, DdNode **v, cuint& len);
-st__table* createDummyState(DdManager *dd);
+st__table* bddCreateDummyState(DdManager *dd);
 void bddFreeTable(DdManager *dd, st__table *tb);
 } // end namespace bddUtils
 
@@ -37,8 +37,11 @@ void bddFreeTable(DdManager *dd, st__table *tb);
 namespace aigUtils
 {
 // aigUtils.cpp
-Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, const size_t start, const size_t end);
-Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm);
+Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm=false);
+//Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
+Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm=false);
+//Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
+Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len);
 } // end namespace aigUtils
 
 
@@ -52,7 +55,7 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
 class TimeLogger
 {
 public:
-    TimeLogger(const string& fileName = "runtime.log", bool v = false, bool f = false);
+    TimeLogger(const string& fileName="runtime.log", bool v=false, bool f=true);
     ~TimeLogger();
     void log(const string& str);
 private:

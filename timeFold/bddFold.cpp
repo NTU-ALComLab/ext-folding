@@ -98,12 +98,12 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     
     // compute signature
     size_t nB = nPo ? (size_t)ceil(log2(double(nPo*2))) : 0;
-    DdNode **B = computeSign(dd, nPo*2);
+    DdNode **B = bddComputeSign(dd, nPo*2);
     assert(initVarSize+nB == Cudd_ReadSize(dd));
     
     // collecting states at each timeframe
     size_t stsSum = 1;
-    st__table *csts, *nsts = createDummyState(dd);
+    st__table *csts, *nsts = bddCreateDummyState(dd);
     st__generator *nGen;
     DdNode *nKNode, *nVNode;
     DdNode *tmp1, *tmp2;
@@ -160,7 +160,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
             delete [] a;
             delete [] pFuncs;
         }
-        else csts = createDummyState(dd);  // i==0
+        else csts = bddCreateDummyState(dd);  // i==0
 
         if(tVec.empty()) for(size_t j=0; j<3; ++j) tVec.push_back(clock());
         

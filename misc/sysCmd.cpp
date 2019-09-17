@@ -43,10 +43,10 @@ int Sys_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: sys [-v] <command>\n");
+    Abc_Print(-2, "usage: sys [-v] <cmd>\n");
     Abc_Print(-2, "\t        execute system command\n");
     Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tfile  : command to be executed\n");
+    Abc_Print(-2, "\tcmd    : command to be executed\n");
     Abc_Print(-2, "\t-h    : print the command usage\n");
     return 1;
 }

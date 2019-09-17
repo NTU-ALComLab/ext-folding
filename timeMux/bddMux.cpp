@@ -105,12 +105,17 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     
     // compute signature
     size_t nB = nCo ? (size_t)ceil(log2(double(nCo*2))) : 0;
-    DdNode **B = computeSign(dd, nCo*2);
+    DdNode **B = bddComputeSign(dd, nCo*2);
     assert(initVarSize+nB == Cudd_ReadSize(dd));
     if(logger) logger->log("prepare sign");
 
     // compute hyper-function
     DdNode *H = bddDot(dd, pNodeVec, B, nCo);
+/*
+    DdNode **b = new DdNode*[nB+1];
+    for(i=0; i<nB+1; ++i) b[i] = Cudd_bddIthVar(dd, initVarSize+i);
+    DdNode *H = Extra_bddEncodingBinary(dd, pNodeVec, nCo, b, nB+1);  Cudd_Ref(H);
+*/
     if(logger) logger->log("build hyper");
 
     // reorder bdd
@@ -147,14 +152,14 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     
     // collecting states at each timeframe
     size_t stsSum = 1;
-    st__table *csts = createDummyState(dd), *nsts;
+    st__table *csts = bddCreateDummyState(dd), *nsts;
     
     for(i=0; i<nTimeFrame; ++i) {
         // cut set enumeration
         if(i != nTimeFrame-1)
             nsts = Extra_bddNodePathsUnderCut(dd, H, nVar*(i+1));
         else
-            nsts = createDummyState(dd);
+            nsts = bddCreateDummyState(dd);
         if(logger) logger->log("cut-" + to_string(i));
 
         stsSum += st__count(csts);
