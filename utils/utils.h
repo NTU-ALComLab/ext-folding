@@ -38,9 +38,9 @@ namespace aigUtils
 {
 // aigUtils.cpp
 Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm=false);
-//Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
+Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
 Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm=false);
-//Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
+Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
 Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len);
 } // end namespace aigUtils
 

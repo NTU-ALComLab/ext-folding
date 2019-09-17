@@ -12,7 +12,7 @@ Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm)
     assert(end <= Abc_NtkPoNum(pNtk));
 
     // single PO cone
-    if(start+1 == end) return aigCone(pNtk, start, rm);
+    if(start+1 == end) return aigSingleCone(pNtk, start, rm);
 
     Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
     int i;  Abc_Obj_t *pObj, *pObjNew;
@@ -54,7 +54,7 @@ Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm)
 }
 
 // take the cone of single PO, with more efficient circuit construction
-Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint n, bool rm)
+Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm)
 {
     assert(n < Abc_NtkPoNum(pNtk));
     Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
@@ -107,11 +107,10 @@ Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm)
     return pNtkPerm;
 }
 
-/* fix sprintf
 // concatenate the given array of circuits, each circuit should have the same #PIs
 Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
 {
-    int i;  char charBuf[1000];
+    int i;  char charBuf[500];
     Abc_Ntk_t *pNtkNew;
     Abc_Obj_t *pObj, *pObjNew;
     
@@ -125,11 +124,8 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     // start the new network
     pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     
-    for(i=0; i<nNtks; ++i)
-        sprintf(charBuf, "%s%s_", charBuf, pNtks[i]->pName);
-    sprintf(charBuf, "%s%s", charBuf, "concat");
+    sprintf(charBuf, "%lu_concat", nNtks);
     pNtkNew->pName = Extra_UtilStrsav(charBuf);
-    sprintf(charBuf, "");  // reset buffer
     
     for(i=0; i<nNtks; ++i)
         Abc_AigConst1(pNtks[i])->pCopy = Abc_AigConst1(pNtkNew);
@@ -157,9 +153,8 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
         pObj = Abc_NtkCreatePo(pNtkNew);
         Abc_ObjAddFanin(pObj, pObjNew);
         
-        sprintf(charBuf, "concat%lu", j);
+        sprintf(charBuf, "cc%lu", j);
         Abc_ObjAssignName(pObj, charBuf, Abc_ObjName(pObj));
-        sprintf(charBuf, "");  // reset buffer
     }
     
     Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
@@ -169,7 +164,6 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     
     return pNtkNew;
 }
-*/
 
 // compute inner product(dot) of 2 given arrays of AIG nodes
 Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len)
