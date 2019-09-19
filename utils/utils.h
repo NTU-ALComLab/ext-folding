@@ -41,7 +41,15 @@ Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm=false);
 Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
 Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm=false);
 Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
+Abc_Ntk_t* aigMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl, bool rm = false);
+Abc_Ntk_t* aigCreateDummyState();
+
 Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len);
+Abc_Obj_t* aigBitsToCube(Abc_Ntk_t *pNtk, cuint n, Abc_Obj_t **pVars, cuint nVars);
+Abc_Obj_t* aigIthVar(Abc_Ntk_t *pNtk, cuint i);
+Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo = true);
+
+void aigRemovePo(Abc_Ntk_t* pNtk, cuint idx);
 } // end namespace aigUtils
 
 
