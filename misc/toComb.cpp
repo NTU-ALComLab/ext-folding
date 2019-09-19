@@ -2,14 +2,14 @@
 
 using namespace std;
 
-namespace rcone
+namespace toComb
 {
 
-int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
+int ToComb_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     //bool verbosity = false;
-    int st = -1, ed = -1, nPo;
+    int num = 1;
     Abc_Ntk_t *pNtk;
 
 
@@ -24,18 +24,12 @@ int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         }
     }
     
-    // retrieve start
-    if(globalUtilOptind >= argc) {
-        cerr << "Please specify the starting index." << endl;
+    // retrieve num
+    if(globalUtilOptind < argc) num =  atoi(argv[globalUtilOptind]);
+    if(num <= 0) {
+        cerr << "num should be a positive integer." << endl;
         goto usage;
     }
-    st = atoi(argv[globalUtilOptind++]);
-    if(st < 0) goto usage;
-
-    // retrieve end
-    if(globalUtilOptind >= argc) ed = st + 1;
-    else ed = atoi(argv[globalUtilOptind]);
-    if((ed < 0) || (st >= ed)) goto usage;
 
     // get pNtk
     pNtk = Abc_FrameReadNtk(pAbc);
@@ -44,24 +38,17 @@ int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         return 1;
     }
 
-    nPo = Abc_NtkPoNum(pNtk);
-    if((st >= nPo) || (ed > nPo)) {
-        cerr << "index out of range." << endl;
-        goto usage;
-    }
-
     // taking cone
-    pNtk = utils::aigUtils::aigCone(pNtk, st, ed);
+    pNtk = utils::aigUtils::aigToComb(pNtk, num);
     Abc_FrameReplaceCurrentNetwork(pAbc, pNtk);
 
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: rcone <start> <end>\n");
-    Abc_Print(-2, "\t        replaces the current network by logic cone of POs from indices [start, end)\n");
+    Abc_Print(-2, "usage: to_comb <num>\n");
+    Abc_Print(-2, "\t        transform current network into a purely combinational circuit, latches will be converted to PI/POs\n");
     //Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tstart : the PO index to start with (inclusive)\n");
-    Abc_Print(-2, "\tend   : (optional) the PO index to end with (exclusive), if not specified, it will be set to start+1 as default\n");
+    Abc_Print(-2, "\tnum   : (optional) the base of #PI being rounded up to [default = %lu]\n", num);
     Abc_Print(-2, "\t-h    : print the command usage\n");
     return 1;
 }
@@ -69,7 +56,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Misc", "rcone", RCone_Command, 0);
+    Cmd_CommandAdd(pAbc, "Misc", "to_comb", ToComb_Command, 0);
 }
 
 // called during ABC termination
@@ -88,6 +75,6 @@ struct registrar
     {
         Abc_FrameAddInitializer(&frame_initializer);
     }
-} rcone_registrar;
+} toComb_registrar;
 
-} // end namespace rcone
+} // end namespace toComb

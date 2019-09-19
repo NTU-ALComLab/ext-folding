@@ -23,8 +23,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 Abc_Print(-1, "Command line switch \"-t\" should be followed by an integer.\n");
                 goto usage;
             }
-            nTimeFrame = atoi(argv[globalUtilOptind]);
-            globalUtilOptind++;
+            nTimeFrame = atoi(argv[globalUtilOptind++]);
             if(nTimeFrame < 0)
                 goto usage;
             break;

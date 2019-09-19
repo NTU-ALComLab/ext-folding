@@ -5,6 +5,7 @@ using namespace timeMux;
 namespace timeMux
 {
 
+/* move to aigUtils::aigToComb
 // 1. make the network purely combinational by converting latches to PI/POs
 // 2. introduce dummy PIs to make #PI be the mulltiples of nTimeFrame
 static Abc_Ntk_t* ntkPrepro(Abc_Ntk_t *pNtk, cuint nTimeFrame)
@@ -45,6 +46,7 @@ static Abc_Ntk_t* ntkPrepro(Abc_Ntk_t *pNtk, cuint nTimeFrame)
     assert(Abc_NtkCheck(pNtkRes));
     return pNtkRes;
 }
+*/
 
 int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
@@ -103,7 +105,9 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         return 1;
     }
     //pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
-    pNtk = ntkPrepro(pNtk, nTimeFrame);
+    //pNtk = ntkPrepro(pNtk, nTimeFrame);
+    pNtk = aigUtils::aigToComb(pNtk, nTimeFrame);
+
 
     nCo = Abc_NtkCoNum(pNtk);     // #output
     nCi = Abc_NtkCiNum(pNtk);     // #input

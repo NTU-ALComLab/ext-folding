@@ -342,7 +342,49 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
     return A;
 }
 
+// 1. make the network purely combinational by converting latches to PI/POs
+// 2. introduce dummy PIs to make #PI be the multiples of "mult"
+Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
+{
+    Abc_Ntk_t *pNtkDup = Abc_NtkStrash(pNtk, 0, 0, 0);
+    Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
+    int i;  Abc_Obj_t *pObj, *pObjNew;
+    
+    Abc_Ntk_t *pNtkRes = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtkRes->pName = Extra_UtilStrsav(pNtkDup->pName);
+    
+    // copy network
+    Abc_AigConst1(pNtkDup)->pCopy = Abc_AigConst1(pNtkRes);
+    Abc_NtkForEachCi(pNtkDup, pObj, i) {
+        pObjNew = Abc_NtkCreatePi(pNtkRes);
+        pObj->pCopy = pObjNew;
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
+    }
+    Abc_AigForEachAnd(pNtkDup, pObj, i)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkRes->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
+    Abc_NtkForEachCo(pNtkDup, pObj, i) {
+        pObjNew = Abc_NtkCreatePo(pNtkRes);
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
+        Abc_ObjAddFanin(pObjNew, Abc_ObjChild0Copy(pObj));
+    }
+    Abc_NtkDelete(pNtkDup);
+
+    // rounding up #PI
+    size_t n = Abc_NtkPiNum(pNtkRes) % mult;
+    char buf[1000];
+    if(n) for(size_t i=0; i<mult-n; ++i) {
+        sprintf(buf, "dummy_%lu", i);
+        Abc_ObjAssignName(Abc_NtkCreatePi(pNtkRes), buf, NULL);
+    }
+
+    Abc_AigCleanup((Abc_Aig_t*)pNtkRes->pManFunc);
+    assert(Abc_NtkCheck(pNtkRes));
+
+    if(rm) Abc_NtkDelete(pNtk);
+
+    return pNtkRes;
+}
 
 } // end namespace utils::aigUtils
 

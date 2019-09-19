@@ -10,3 +10,5 @@ SRC += \
     src/ext-folding/timeMux/bddMux.cpp \
     src/ext-folding/timeMux/checkEqv.cpp \
     src/ext-folding/misc/sysCmd.cpp \
+    src/ext-folding/misc/rcone.cpp \
+    src/ext-folding/misc/toComb.cpp \
