@@ -3,6 +3,11 @@
 #include <unistd.h>
 #include <cstdio>
 
+extern "C"
+{
+void Abc_NtkCecFraig(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, int nSeconds, int fVerbose);
+}
+
 namespace timeMux
 {
 

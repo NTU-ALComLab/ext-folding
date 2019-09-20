@@ -37,17 +37,17 @@ void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& file
 
 // compute signature
 // caution: remember to free the array afterwards!!!
-DdNode** bddComputeSign(DdManager *dd, cuint &range)
+DdNode** bddComputeSign(DdManager *dd, cuint range, int stIdx)
 {
     // introduce variable alpha(a)
     // #a = log2(ceil(range))
     // a = [ a_n-1, a_n-2 , ... , a_1, a_0 ]
-    size_t initVarSize = Cudd_ReadSize(dd);
+    size_t initVarSize = (stIdx < 0) ? Cudd_ReadSize(dd) : stIdx;
     size_t na = range ? (size_t)ceil(log2(double(range))) : 0;
     DdNode **a = new DdNode*[na];
-    for(size_t j=0; j<na; ++j) a[j] = Cudd_bddNewVar(dd);
+    //for(size_t j=0; j<na; ++j) a[j] = Cudd_bddNewVar(dd);
+    for(size_t j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+j);
     assert(initVarSize + na == Cudd_ReadSize(dd));
-    
     
     // compute signature for each number within range
     DdNode **A = new DdNode*[range];

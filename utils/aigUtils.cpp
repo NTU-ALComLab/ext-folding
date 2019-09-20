@@ -1,5 +1,11 @@
 #include "ext-folding/utils/utils.h"
 
+extern "C"
+{
+void Abc_NtkRemovePo(Abc_Ntk_t *pNtk, int iOutput, int fRemoveConst0);
+int Abc_NtkQuantify(Abc_Ntk_t *pNtk, int fUniv, int iVar, int fVerbose);
+}
+
 namespace utils::aigUtils
 {
 
@@ -346,10 +352,11 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
 // 2. introduce dummy PIs to make #PI be the multiples of "mult"
 Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
 {
-    Abc_Ntk_t *pNtkDup = Abc_NtkStrash(pNtk, 0, 0, 0);
+    bool fDel = !Abc_NtkIsStrash(pNtk);
+    Abc_Ntk_t *pNtkDup = fDel ? Abc_NtkStrash(pNtk, 0, 0, 0) : pNtk;
     Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
-    int i;  Abc_Obj_t *pObj, *pObjNew;
     
+    int i;  Abc_Obj_t *pObj, *pObjNew;
     Abc_Ntk_t *pNtkRes = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     pNtkRes->pName = Extra_UtilStrsav(pNtkDup->pName);
     
@@ -368,7 +375,7 @@ Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
         Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
         Abc_ObjAddFanin(pObjNew, Abc_ObjChild0Copy(pObj));
     }
-    Abc_NtkDelete(pNtkDup);
+    if(fDel) Abc_NtkDelete(pNtkDup);
 
     // rounding up #PI
     size_t n = Abc_NtkPiNum(pNtkRes) % mult;
