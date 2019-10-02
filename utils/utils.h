@@ -28,6 +28,7 @@ void bddNotVec(DdNode **vec, cuint& len);
 void bddDerefVec(DdManager *dd, DdNode **v, cuint& len);
 void bddFreeVec(DdManager *dd, DdNode **v, cuint& len);
 void bddFreeTable(DdManager *dd, st__table *tb);
+void bddReordRange(DdManager *dd, cuint lev, cuint size, const Cudd_ReorderingType rt = CUDD_REORDER_SYMM_SIFT);
 
 DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len);
 DdNode** bddComputeSign(DdManager *dd, cuint range, int stIdx = -1);
@@ -40,7 +41,7 @@ namespace aigUtils
 // aigUtils.cpp
 Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm=false);
 Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
-Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm=false);
+Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, int *perm, bool rm=false);
 Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
 Abc_Ntk_t* aigMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl, bool rm = false);
 Abc_Ntk_t* aigCreateDummyState();
@@ -58,6 +59,7 @@ void aigRemovePo(Abc_Ntk_t* pNtk, cuint idx);
 namespace fileWrite
 {
 // fileWrite.cpp
+void writePerm(int *perm, cuint n, ostream& fp, bool isPi = true);
 void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostream& fp);
 void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, cuint cCnt, cuint nCnt, vector<string>& stg);
 } // end namespace fileWrite

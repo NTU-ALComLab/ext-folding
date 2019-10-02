@@ -81,7 +81,7 @@ Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm)
 }
 
 // permutates the order of PIs with the given "perm"
-Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, size_t *perm, bool rm)
+Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, int *perm, bool rm)
 {
     assert(Abc_NtkIsStrash(pNtk));
 

@@ -1,5 +1,3 @@
-
-
 #include "ext-folding/timeMux/timeMux.h"
 
 extern "C"
@@ -316,11 +314,11 @@ int buildAigHyper(Abc_Ntk_t *&pNtk, cuint optRnd = 3)
     return Abc_NtkCo(pNtk, nCo)->Id;
 }
 
-int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
+int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
-/*  build hyper-function first, then collapse  */
+  /*  method 1: build hyper-function first, then collapse  
     // get basic settings
     pNtk = Abc_NtkDup(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
@@ -359,9 +357,9 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
         for(i=0; i<initVarSize; ++i)
             perm[i] = cuddI(dd, i);
     }
-
+  */
     
-/*  collapse first, then build hyper-function on BDD
+  /*  method 2: collapse first, then build hyper-function on BDD  */
     // initialize bdd manger
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, (int)(perm!=NULL), 0, 0);
     //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
@@ -392,27 +390,25 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     DdNode *H = bddDot(dd, pNodeVec, B, nCo);
     if(logger) logger->log("build hyper");
 
-    // build hyper-function with bdd extra utils by Alan
-    // DdNode **b = new DdNode*[nB+1];
-    // for(i=0; i<nB+1; ++i) b[i] = Cudd_bddIthVar(dd, initVarSize+i);
-    // DdNode *H = Extra_bddEncodingBinary(dd, pNodeVec, nCo, b, nB+1);  Cudd_Ref(H);
-    // delete [] b;
+  /* build hyper-function with bdd extra utils in abc
+    DdNode **b = new DdNode*[nB+1];
+    for(i=0; i<nB+1; ++i) b[i] = Cudd_bddIthVar(dd, initVarSize+i);
+    DdNode *H = Extra_bddEncodingBinary(dd, pNodeVec, nCo, b, nB+1);  Cudd_Ref(H);
+    delete [] b;
+  */
 
     // reorder bdd
     if(perm) {
-        // Cudd_AutodynEnable(dd, rt);
-        // // fixed B var. order
-        // for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
-        //     assert(Cudd_bddBindVar(dd, i));
-        // Cudd_ReduceHeap(dd, rt, 1);
-        // Cudd_AutodynDisable(dd);
-
-        // build the group tree for reordering and free it afterwards
-        if(dd->tree) Cudd_FreeTree(dd);
-        dd->tree = Mtr_InitGroupTree(0, initVarSize);
-        dd->tree->index = dd->invperm[0];
+      /* Cudd_bddBindVar doesn't seem to work
+        Cudd_AutodynEnable(dd, rt);
+        // fixed B var. order
+        for(i=initVarSize; i<Cudd_ReadSize(dd); ++i)
+            assert(Cudd_bddBindVar(dd, i));
         Cudd_ReduceHeap(dd, rt, 1);
-        if(dd->tree) Cudd_FreeTree(dd);
+        Cudd_AutodynDisable(dd);
+      */
+
+        bddReordRange(dd, 0, initVarSize, rt);
 
         // check var. order
         //for(i=0; i<Cudd_ReadSize(dd); ++i)
@@ -425,9 +421,8 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
             perm[i] = cuddI(dd, i);
 
         if(logger) logger->log("reord");
-
     }
-*/
+
 
     // collecting states at each timeframe
     size_t stsSum = 1;
@@ -470,7 +465,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
     // free bdd manger
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
-    Abc_NtkDelete(pNtk);
+    //Abc_NtkDelete(pNtk);  // method 1
     
     
     if(logger) {
@@ -482,4 +477,4 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, size_t *perm,
 }
 
 
-} // end namespace timeMux::bddUtils
+} // end namespace timeMux

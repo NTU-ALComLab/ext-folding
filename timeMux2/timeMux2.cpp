@@ -1,64 +1,21 @@
-#include "ext-folding/timeMux/timeMux.h"
+#include "ext-folding/timeMux2/timeMux2.h"
 
-using namespace timeMux;
+using namespace timeMux2;
 
-namespace timeMux
+namespace timeMux2
 {
 
-/* move to aigUtils::aigToComb
-// 1. make the network purely combinational by converting latches to PI/POs
-// 2. introduce dummy PIs to make #PI be the mulltiples of nTimeFrame
-static Abc_Ntk_t* ntkPrepro(Abc_Ntk_t *pNtk, cuint nTimeFrame)
-{
-    Abc_Ntk_t *pNtkDup = Abc_NtkStrash(pNtk, 0, 0, 0);
-    Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
-    int i;  Abc_Obj_t *pObj, *pObjNew;
-    
-    Abc_Ntk_t *pNtkRes = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
-    pNtkRes->pName = Extra_UtilStrsav(pNtkDup->pName);
-    
-    // copy network
-    Abc_AigConst1(pNtkDup)->pCopy = Abc_AigConst1(pNtkRes);
-    Abc_NtkForEachCi(pNtkDup, pObj, i) {
-        pObjNew = Abc_NtkCreatePi(pNtkRes);
-        pObj->pCopy = pObjNew;
-        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
-    }
-    Abc_AigForEachAnd(pNtkDup, pObj, i)
-        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkRes->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
-
-    Abc_NtkForEachCo(pNtkDup, pObj, i) {
-        pObjNew = Abc_NtkCreatePo(pNtkRes);
-        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
-        Abc_ObjAddFanin(pObjNew, Abc_ObjChild0Copy(pObj));
-    }
-    Abc_NtkDelete(pNtkDup);
-
-    // rounding up #PI
-    size_t n = Abc_NtkPiNum(pNtkRes) % nTimeFrame;
-    char buf[1000];
-    if(n) for(size_t i=0; i<nTimeFrame-n; ++i) {
-        sprintf(buf, "dummy_%lu", i);
-        Abc_ObjAssignName(Abc_NtkCreatePi(pNtkRes), buf, NULL);
-    }
-
-    Abc_AigCleanup((Abc_Aig_t*)pNtkRes->pManFunc);
-    assert(Abc_NtkCheck(pNtkRes));
-    return pNtkRes;
-}
-*/
-
-int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
+int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk;
     bool mode = false, cec = false, verbosity = true;
     char *logFileName = NULL;
-    int *perm = NULL;
 
     vector<string> stg;
     ostream *fp;
     int nTimeFrame = -1, nSts = -1;
+    int *iPerm, *oPerm;
     size_t nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
@@ -81,9 +38,6 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         case 'm':
             mode = !mode;
             break;
-        case 'r':
-            perm = (int*)((size_t)perm ^ 1);
-            break;
         case 'c':
             cec = !cec;
             break;
@@ -104,41 +58,40 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         Abc_Print(-1, "Empty network.\n");
         return 1;
     }
-    //pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
-    //pNtk = ntkPrepro(pNtk, nTimeFrame);
     pNtk = aigUtils::aigToComb(pNtk, nTimeFrame);
-
 
     nCo = Abc_NtkCoNum(pNtk);     // #output
     nCi = Abc_NtkCiNum(pNtk);     // #input
     nPi = nCi / nTimeFrame;       // #Pi of the sequential circuit
     assert(nCi == nPi * nTimeFrame);
-    if(perm) perm = new int[nCi];
+    
+    iPerm = new int[nCi];
+    oPerm = new int[nCo];
 
-    if(!mode) nSts = bddMux(pNtk, nTimeFrame, stg, perm, verbosity, logFileName);
+    if(!mode) nSts = bddMux2(pNtk, nTimeFrame, iPerm, oPerm, stg, verbosity, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
-    //else nSts = aigFold(pNtk, nTimeFrame, stg, verbosity);
     
     if(nSts > 0) {
-        fileWrite::writePerm(perm, nCi, *fp);
+        fileWrite::writePerm(iPerm, nCi, *fp);
+        fileWrite::writePerm(oPerm, nCo, *fp, false);
         fileWrite::writeKiss(nPi, nCo, nSts, stg, *fp);
-        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
+        //if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;
     if(logFileName) ABC_FREE(logFileName);
-    if(perm) delete [] perm;
     Abc_NtkDelete(pNtk);
+    delete [] iPerm;
+    delete [] oPerm;
 
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux [-t <num>] [-l <log_file>] [-mrcv] <kiss_file>\n");
-    Abc_Print(-2, "\t             time multiplexing\n");
+    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-mrcv] <kiss_file>\n");
+    Abc_Print(-2, "\t             time multiplexing with PO pin sharing\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
-    Abc_Print(-2, "\t-r         : toggles reordering of circuit inputs [default = %s]\n", perm ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
     Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
@@ -149,7 +102,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux", tMux_Command, 0);
+    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux2", tMux2_Command, 0);
 }
 
 // called during ABC termination
@@ -168,6 +121,6 @@ struct registrar
     {
         Abc_FrameAddInitializer(&frame_initializer);
     }
-} timeMux_registrar;
+} timeMux2_registrar;
 
-} // end namespace timeMux
+} // end namespace timeMux2

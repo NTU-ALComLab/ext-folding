@@ -2,7 +2,16 @@
 
 namespace utils::fileWrite
 {
-    
+
+void writePerm(int *perm, cuint n, ostream& fp, bool isPi)
+{
+    //if(!perm) return;
+    fp << "# " << (isPi ? "PI" : "PO") << " perm: ";
+    for(size_t i=0; i<n; ++i)
+        fp << (perm ? perm[i] : i) << " ";
+    fp << "\n";
+}
+
 void writeKiss(cuint nPi, cuint nPo, cuint nSts, const vector<string>& stg, ostream& fp)
 {
     fp << ".i " << nPi << "\n";

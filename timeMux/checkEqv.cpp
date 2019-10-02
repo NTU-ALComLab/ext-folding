@@ -39,7 +39,7 @@ static inline void dumpBLIF(cuint pid)
 }
 
 // prepare network for CEC
-static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, size_t *perm, cuint pid)
+static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
 {
     // read the BLIF file
     char buf[100];
@@ -68,7 +68,7 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, size_t *perm, cuint pid)
     return pNtk;
 }
 
-void checkEqv(Abc_Ntk_t *pNtk, size_t *perm, cuint nTimeFrame, const vector<string>& stg, cuint nSts)
+void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, const vector<string>& stg, cuint nSts)
 {
     size_t pid = (size_t)getpid();  // name the tmp dump files with pid to avoid name collision
 

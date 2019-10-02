@@ -128,4 +128,15 @@ void bddFreeTable(DdManager *dd, st__table *tb)
     st__free_table(tb);
 }
 
-} // unnamed namespace utils::bddUtils
+void bddReordRange(DdManager *dd, cuint lev, cuint size, const Cudd_ReorderingType rt)
+{
+    MtrNode *bak = dd->tree;
+    // build the group tree for reordering and free it afterwards
+    dd->tree = Mtr_InitGroupTree(0, size);
+    dd->tree->index = dd->invperm[lev];
+    Cudd_ReduceHeap(dd, rt, 1);
+    Cudd_FreeTree(dd);
+    dd->tree = bak;
+}
+
+} // end namespace utils::bddUtils
