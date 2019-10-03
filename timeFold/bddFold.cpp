@@ -13,7 +13,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 
     st__generator *cGen, *nGen;
     DdNode *cKNode, *cVNode, *nKNode, *nVNode;
-    size_t cCnt = 0, nCnt = 0;
+    uint cCnt = 0, nCnt = 0;
     
     DdNode **oFuncs  = new DdNode*[nPo];
     DdNode *F, *G, *path, *bCube, *tmp1, *tmp2;
@@ -25,7 +25,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         // get output function of current state
         // oFunc = cofactor(f_k, cube)
         bCube = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(bCube);  // bdd of the cube
-        for(size_t k=0; k<nPo; ++k) {
+        for(uint k=0; k<nPo; ++k) {
             oFuncs[k] = Cudd_Cofactor(dd, pNodeVec[i*nPo+k], bCube);
             Cudd_Ref(oFuncs[k]);
         }
@@ -34,7 +34,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 
         // encode output on/off-sets
         F = b0;  Cudd_Ref(F);
-        for(size_t k=0; k<2; ++k) {
+        for(uint k=0; k<2; ++k) {
             bddNotVec(oFuncs, nPo);   // 2*negation overall
             tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
             tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
@@ -97,12 +97,12 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         pNodeVec[i] = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
     
     // compute signature
-    size_t nB = nPo ? (size_t)ceil(log2(double(nPo*2))) : 0;
+    uint nB = nPo ? (uint)ceil(log2(double(nPo*2))) : 0;
     DdNode **B = bddComputeSign(dd, nPo*2);
     assert(initVarSize+nB == Cudd_ReadSize(dd));
     
     // collecting states at each timeframe
-    size_t stsSum = 1;
+    uint stsSum = 1;
     st__table *csts, *nsts = bddCreateDummyState(dd);
     st__generator *nGen;
     DdNode *nKNode, *nVNode;
@@ -118,7 +118,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
             tVec.push_back(clock());  // t0: init
             
             // states from (i+1)^th time-frame (pFuncs)
-            size_t pCnt = 0, nFuncs = st__count(nsts);
+            uint pCnt = 0, nFuncs = st__count(nsts);
             DdNode **pFuncs = new DdNode*[nFuncs];
             st__foreach_item(nsts, nGen, (const char**)&nKNode, (char**)&nVNode)
                 pFuncs[pCnt++] = nVNode;
@@ -126,9 +126,9 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
             if(pCnt == 1) assert(pFuncs[0] == b1);
 
             // variables to encode pFuncs
-            size_t na = (size_t)ceil(log2(double(nFuncs))) + 2;
+            uint na = (uint)ceil(log2(double(nFuncs))) + 2;
             DdNode **a = new DdNode*[na];
-            for(size_t j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+nB+j);
+            for(uint j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+nB+j);
 
             // hyper-function encoding of output functions of i^th time-frame
             DdNode *ft = bddDot(dd, pNodeVec+i*nPo, B, nPo);
@@ -162,7 +162,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         }
         else csts = bddCreateDummyState(dd);  // i==0
 
-        if(tVec.empty()) for(size_t j=0; j<3; ++j) tVec.push_back(clock());
+        if(tVec.empty()) for(uint j=0; j<3; ++j) tVec.push_back(clock());
         
         stsSum += st__count(csts);
         
@@ -177,7 +177,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         nsts = csts;
         
         if(verbosity) {
-            for(size_t j=1; j<tVec.size(); ++j)
+            for(uint j=1; j<tVec.size(); ++j)
                 cout << setw(7) << double(tVec[j]-tVec[j-1])/CLOCKS_PER_SEC << " ";
             cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
         }

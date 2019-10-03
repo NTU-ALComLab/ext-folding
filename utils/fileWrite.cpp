@@ -7,7 +7,7 @@ void writePerm(int *perm, cuint n, ostream& fp, bool isPi)
 {
     //if(!perm) return;
     fp << "# " << (isPi ? "PI" : "PO") << " perm: ";
-    for(size_t i=0; i<n; ++i)
+    for(uint i=0; i<n; ++i)
         fp << (perm ? perm[i] : i) << " ";
     fp << "\n";
 }
@@ -32,8 +32,8 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
     int *cube;  CUDD_VALUE_TYPE val;  DdGen *gen;
     DdNode *tmp1, *tmp2;
 
-    size_t vStart = i * nPi;
-    size_t vEnd = (i+1) * nPi;
+    uint vStart = i * nPi;
+    uint vEnd = (i+1) * nPi;
 
     while(G != b0) {
         gen = Cudd_FirstCube(dd, G, &cube, &val);
@@ -42,12 +42,12 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
 
         /*
         cout << "\ncube: ";
-        for(size_t m=0; m<Cudd_ReadSize(dd); ++m)
+        for(uint m=0; m<Cudd_ReadSize(dd); ++m)
             cout << cube[m];
         cout << endl;
 
         cout << "pube: ";
-        for(size_t m=0; m<Cudd_ReadSize(dd); ++m)
+        for(uint m=0; m<Cudd_ReadSize(dd); ++m)
             cout << cube[dd->invperm[m]];
         cout << endl;
         */
@@ -59,8 +59,8 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
 
 
         // input bits
-        for(size_t m=0; m<Cudd_ReadSize(dd); ++m) {
-            size_t n = cuddI(dd, m);
+        for(uint m=0; m<Cudd_ReadSize(dd); ++m) {
+            uint n = cuddI(dd, m);
             if((n>=vStart) && (n<vEnd) && (cube[m]!=2))
                 trans[n-vStart] = cube[m] + '0';
                 //trans += (cube[m]==2) ? string("-") : to_string(cube[m]);
@@ -74,7 +74,7 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
         // output bits
         tmp1 = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(tmp1);
 
-        for(size_t k=0; k<nPo; ++k) {
+        for(uint k=0; k<nPo; ++k) {
             if(oFuncs) {
                 tmp2 = Cudd_Cofactor(dd, oFuncs[k], tmp1);  Cudd_Ref(tmp2);
                 assert(Cudd_Regular(tmp2) == b1);

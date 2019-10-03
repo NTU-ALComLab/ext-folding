@@ -13,7 +13,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     vector<string> stg;
     ostream *fp;
     int nTimeFrame = -1, nSts = -1;
-    size_t nCi, nPi, nCo, nPo;
+    uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "tmvh")) != EOF) {

@@ -12,10 +12,11 @@
 
 using namespace std;
 
-typedef const size_t cuint;
-
 namespace utils
 {
+
+typedef unsigned uint;
+typedef const uint cuint;
 
 namespace bddUtils
 {
@@ -24,13 +25,13 @@ void bddShowManInfo(DdManager *dd);
 void bddShowNodeInfo(DdManager *dd, DdNode *pNode);
 void bddDumpPng(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
 void bddDumpBlif(DdManager *dd, DdNode **pNodeVec, int nNode, const string& fileName);
-void bddNotVec(DdNode **vec, cuint& len);
-void bddDerefVec(DdManager *dd, DdNode **v, cuint& len);
-void bddFreeVec(DdManager *dd, DdNode **v, cuint& len);
+void bddNotVec(DdNode **vec, cuint len);
+void bddDerefVec(DdManager *dd, DdNode **v, cuint len);
+void bddFreeVec(DdManager *dd, DdNode **v, cuint len);
 void bddFreeTable(DdManager *dd, st__table *tb);
 void bddReordRange(DdManager *dd, cuint lev, cuint size, const Cudd_ReorderingType rt = CUDD_REORDER_SYMM_SIFT);
 
-DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len);
+DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint len);
 DdNode** bddComputeSign(DdManager *dd, cuint range, int stIdx = -1);
 st__table* bddCreateDummyState(DdManager *dd);
 } // end namespace bddUtils

@@ -35,9 +35,9 @@ static Abc_Ntk_t* ntkPrepro(Abc_Ntk_t *pNtk, cuint nTimeFrame)
     Abc_NtkDelete(pNtkDup);
 
     // rounding up #PI
-    size_t n = Abc_NtkPiNum(pNtkRes) % nTimeFrame;
+    uint n = Abc_NtkPiNum(pNtkRes) % nTimeFrame;
     char buf[1000];
-    if(n) for(size_t i=0; i<nTimeFrame-n; ++i) {
+    if(n) for(uint i=0; i<nTimeFrame-n; ++i) {
         sprintf(buf, "dummy_%lu", i);
         Abc_ObjAssignName(Abc_NtkCreatePi(pNtkRes), buf, NULL);
     }
@@ -59,7 +59,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     vector<string> stg;
     ostream *fp;
     int nTimeFrame = -1, nSts = -1;
-    size_t nCi, nPi, nCo;
+    uint nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "tlmrcvh")) != EOF) {

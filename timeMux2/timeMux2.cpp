@@ -16,7 +16,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     ostream *fp;
     int nTimeFrame = -1, nSts = -1;
     int *iPerm, *oPerm;
-    size_t nCi, nPi, nCo;
+    uint nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "tlmrcvh")) != EOF) {

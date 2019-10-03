@@ -27,7 +27,7 @@ Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm)
     Abc_Ntk_t *pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     
     char buf[100];
-    sprintf(buf, "%s_cone%lu-%lu", pNtk->pName, start, end);
+    sprintf(buf, "%s_cone%u-%u", pNtk->pName, start, end);
     pNtkNew->pName = Extra_UtilStrsav(buf);
     
     Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkNew);
@@ -132,7 +132,7 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     // start the new network
     pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     
-    sprintf(charBuf, "%lu_concat", nNtks);
+    sprintf(charBuf, "%u_concat", nNtks);
     pNtkNew->pName = Extra_UtilStrsav(charBuf);
     
     for(i=0; i<nNtks; ++i)
@@ -143,7 +143,7 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
         pObjNew = Abc_NtkCreatePi(pNtkNew);
         // remember this PI in the old PIs
         pObj->pCopy = pObjNew;
-        for(size_t j=1; j<nNtks; ++j) {
+        for(uint j=1; j<nNtks; ++j) {
             pObj = Abc_NtkCi(pNtks[j], i);  
             pObj->pCopy = pObjNew;
         }
@@ -152,23 +152,23 @@ Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     }
     
     // AddOne for each Ntk
-    for(size_t j=0; j<nNtks; ++j) Abc_AigForEachAnd(pNtks[j], pObj, i)
+    for(uint j=0; j<nNtks; ++j) Abc_AigForEachAnd(pNtks[j], pObj, i)
         pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
     // create and collect POs for each Ntk
-    for(size_t j=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
+    for(uint j=0; j<nNtks; ++j) Abc_NtkForEachCo(pNtks[j], pObj, i) {
         pObjNew = Abc_ObjChild0Copy(pObj);
         pObj = Abc_NtkCreatePo(pNtkNew);
         Abc_ObjAddFanin(pObj, pObjNew);
         
-        sprintf(charBuf, "cc%lu", j);
+        sprintf(charBuf, "cc%u", j);
         Abc_ObjAssignName(pObj, charBuf, Abc_ObjName(pObj));
     }
     
     Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
     assert(Abc_NtkCheck(pNtkNew));
 
-    if(rm) for(size_t j=0; j<nNtks; ++j) Abc_NtkDelete(pNtks[j]);
+    if(rm) for(uint j=0; j<nNtks; ++j) Abc_NtkDelete(pNtks[j]);
     
     return pNtkNew;
 }
@@ -179,7 +179,7 @@ Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len)
     assert(Abc_NtkIsStrash(pNtk));
     Abc_Obj_t *ret = Abc_ObjNot(Abc_AigConst1(pNtk));
     Abc_Aig_t *pMan = (Abc_Aig_t*)pNtk->pManFunc;
-    for(size_t i=0; i<len; ++i)
+    for(uint i=0; i<len; ++i)
         ret = Abc_AigOr(pMan, ret, Abc_AigAnd(pMan, v1[i], v2[i]));
     return ret;
 }
@@ -248,9 +248,9 @@ Abc_Obj_t* aigBitsToCube(Abc_Ntk_t *pNtk, cuint n, Abc_Obj_t **pVars, cuint nVar
     assert(Abc_NtkIsStrash(pNtk));
     assert((1<<nVars) >= n);
 
-    size_t k = n;
+    uint k = n;
     Abc_Obj_t *var, *cube = Abc_AigConst1(pNtk);
-    for(size_t i=0; i<nVars; ++i) {
+    for(uint i=0; i<nVars; ++i) {
         var = Abc_ObjNotCond(pVars[i], !(k & 1));
         cube = Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, cube, var);
         k >>= 1;
@@ -267,8 +267,8 @@ Abc_Obj_t* aigIthVar(Abc_Ntk_t *pNtk, cuint i)
     assert(Abc_NtkIsStrash(pNtk));
 
     char buf[1000];
-    for(size_t x=Abc_NtkPiNum(pNtk); x<=i; ++x) {
-        sprintf(buf, "new_%lu", x);
+    for(uint x=Abc_NtkPiNum(pNtk); x<=i; ++x) {
+        sprintf(buf, "new_%u", x);
         Abc_ObjAssignName(Abc_NtkCreatePi(pNtk), buf, NULL);
     }
 
@@ -311,12 +311,12 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
     // introduce variables: alpha(a)
     // #a = log2(ceil(range))
     // a = [ a_n-1, a_n-2 , ... , a_1, a_0 ]
-    size_t initVarSize = Abc_NtkCiNum(pNtk);
-    size_t na = range ? (size_t)ceil(log2(double(range))) : 0;
+    uint initVarSize = Abc_NtkCiNum(pNtk);
+    uint na = range ? (uint)ceil(log2(double(range))) : 0;
     
     char buf[1000];
-    for(size_t j=0; j<na; ++j) {
-        sprintf(buf, "a_%lu", j);
+    for(uint j=0; j<na; ++j) {
+        sprintf(buf, "a_%u", j);
         Abc_Obj_t *pObj = Abc_NtkCreatePi(pNtk);
         Abc_ObjAssignName(pObj, buf, NULL);
     }
@@ -325,11 +325,11 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
     // compute signature for each number within range
     Abc_Obj_t **A = new Abc_Obj_t*[range];
     Abc_Obj_t *cube, *var;
-    for(size_t j=0; j<range; ++j) {
+    for(uint j=0; j<range; ++j) {
         // TODO: change this part to bitsToCube??
         cube = Abc_AigConst1(pNtk);
-        size_t k = j;
-        for(size_t m=0; m<na; ++m) {
+        uint k = j;
+        for(uint m=0; m<na; ++m) {
             var = Abc_NtkCi(pNtk, initVarSize+m);
             if(!(k & 1)) var = Abc_ObjNot(var);
             cube = Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, cube, var);
@@ -339,7 +339,7 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
         
         A[j] = cube;
         if(fAddPo) {
-            sprintf(buf, "A_%lu", j);
+            sprintf(buf, "A_%u", j);
             var = Abc_NtkCreatePo(pNtk);
             Abc_ObjAssignName(var, buf, NULL);
             Abc_ObjAddFanin(var, cube);
@@ -378,10 +378,10 @@ Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
     if(fDel) Abc_NtkDelete(pNtkDup);
 
     // rounding up #PI
-    size_t n = Abc_NtkPiNum(pNtkRes) % mult;
+    uint n = Abc_NtkPiNum(pNtkRes) % mult;
     char buf[1000];
-    if(n) for(size_t i=0; i<mult-n; ++i) {
-        sprintf(buf, "dummy_%lu", i);
+    if(n) for(uint i=0; i<mult-n; ++i) {
+        sprintf(buf, "dummy_%u", i);
         Abc_ObjAssignName(Abc_NtkCreatePi(pNtkRes), buf, NULL);
     }
 

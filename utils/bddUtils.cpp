@@ -42,22 +42,22 @@ DdNode** bddComputeSign(DdManager *dd, cuint range, int stIdx)
     // introduce variable alpha(a)
     // #a = log2(ceil(range))
     // a = [ a_n-1, a_n-2 , ... , a_1, a_0 ]
-    size_t initVarSize = (stIdx < 0) ? Cudd_ReadSize(dd) : stIdx;
-    size_t na = range ? (size_t)ceil(log2(double(range))) : 0;
+    uint initVarSize = (stIdx < 0) ? Cudd_ReadSize(dd) : stIdx;
+    uint na = range ? (uint)ceil(log2(double(range))) : 0;
     DdNode **a = new DdNode*[na];
-    //for(size_t j=0; j<na; ++j) a[j] = Cudd_bddNewVar(dd);
-    for(size_t j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+j);
+    //for(uint j=0; j<na; ++j) a[j] = Cudd_bddNewVar(dd);
+    for(uint j=0; j<na; ++j) a[j] = Cudd_bddIthVar(dd, initVarSize+j);
     assert(initVarSize + na == Cudd_ReadSize(dd));
     
     // compute signature for each number within range
     DdNode **A = new DdNode*[range];
     int *cube = new int[initVarSize+na];
-    for(size_t j=0; j<initVarSize; ++j) cube[j] = 2;
+    for(uint j=0; j<initVarSize; ++j) cube[j] = 2;
     
-    for(size_t j=0; j<range; ++j) {
+    for(uint j=0; j<range; ++j) {
         // convert to bin, TODO: maybe replace with Extra_bddBitsToCube ??
-        size_t k = j;
-        for(size_t m=0; m<na; ++m) {
+        uint k = j;
+        for(uint m=0; m<na; ++m) {
             cube[initVarSize+m] = k & 1;
             k >>= 1;
         }
@@ -75,11 +75,11 @@ DdNode** bddComputeSign(DdManager *dd, cuint range, int stIdx)
 
 // compute inner product(dot) of 2 given bdd arrays
 // return a bdd node with ref = 1
-DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len)
+DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint len)
 {
     DdNode *ret = Cudd_ReadLogicZero(dd);  Cudd_Ref(ret);
     DdNode *tmp1, *tmp2;
-    for(size_t i=0; i<len; ++i) {
+    for(uint i=0; i<len; ++i) {
         tmp1 = Cudd_bddAnd(dd, *(v1+i), *(v2+i));  Cudd_Ref(tmp1);
         tmp2 = Cudd_bddOr(dd, ret, tmp1);  Cudd_Ref(tmp2);
         Cudd_RecursiveDeref(dd, ret);
@@ -91,19 +91,19 @@ DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint& len)
 
 
 // negate an array of bdd nodes
-void bddNotVec(DdNode **vec, cuint& len)
+void bddNotVec(DdNode **vec, cuint len)
 {
-    for(size_t i=0; i<len; ++i)
+    for(uint i=0; i<len; ++i)
         vec[i] = Cudd_Not(vec[i]);
 }
 
-void bddDerefVec(DdManager *dd, DdNode **v, cuint& len)
+void bddDerefVec(DdManager *dd, DdNode **v, cuint len)
 {
-    for(size_t i=0; i<len; ++i)
+    for(uint i=0; i<len; ++i)
         Cudd_RecursiveDeref(dd, v[i]);
 }
 
-void bddFreeVec(DdManager *dd, DdNode **v, cuint& len)
+void bddFreeVec(DdManager *dd, DdNode **v, cuint len)
 {
     bddDerefVec(dd, v, len);
     delete [] v;

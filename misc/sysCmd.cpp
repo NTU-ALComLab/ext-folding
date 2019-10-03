@@ -31,7 +31,7 @@ int Sys_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         goto usage;
     }
 
-    for(size_t i=globalUtilOptind; i<argc; ++i) {
+    for(uint i=globalUtilOptind; i<argc; ++i) {
         cmd += argv[globalUtilOptind];
         cmd += " ";
     }

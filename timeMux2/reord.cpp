@@ -13,7 +13,7 @@ namespace timeMux2
 static bool checkPerm(int *perm, cuint size, cuint cap)
 {
     SupVec sv(cap);
-    for(size_t i=0; i<size; ++i) {
+    for(uint i=0; i<size; ++i) {
         if((perm[i] < 0) || (perm[i] >= cap) || sv[perm[i]]) return false;
         sv[perm[i]] = 1;
     }
@@ -31,7 +31,7 @@ static void initSupVecs(Abc_Ntk_t *pNtk, DdManager *dd, DdNode **nodeVec, SupVec
         nodeVec[i] = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
         sup = Cudd_Support(dd, nodeVec[i]);  Cudd_Ref(sup);
         assert(Cudd_BddToCubeArray(dd, sup, arr));
-        for(size_t j=0; j<nCi; ++j)
+        for(uint j=0; j<nCi; ++j)
             sVec[j] = (arr[j] != 2);
         sVecs.push_back(sVec);
         Cudd_RecursiveDeref(dd, sup);
@@ -55,38 +55,38 @@ class SupVecCompFunc
 
 // reorders the circuit output, returns the configuration of each time-slot
 // remember to free the returned "slots" array afterwards
-static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, size_t &nPo, int *oPerm, TimeLogger *logger)
+static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger)
 {
     // sort each CO by #1s in its support vector
-    size_t *sIdx = new size_t[nCo];
-    for(size_t i=0; i<nCo; ++i) sIdx[i] = i;
+    uint *sIdx = new uint[nCo];
+    for(uint i=0; i<nCo; ++i) sIdx[i] = i;
     sort(sIdx, sIdx+nCo, SupVecCompFunc(sVecs));
   /*  print sorted info.
-    for(size_t i=0; i<nCo; ++i) {
+    for(uint i=0; i<nCo; ++i) {
         cout << sIdx[i] << ": ";
-        for(size_t j=0; j<sVecs[sIdx[i]].size(); ++j)
+        for(uint j=0; j<sVecs[sIdx[i]].size(); ++j)
             cout << sVecs[sIdx[i]][j];
         cout << " -> " << sVecs[sIdx[i]].count() << endl;
     }
   */
 
     int *slots = NULL;
-    size_t nSlot;
+    uint nSlot;
     bool legal = false;
     do {
         SupVec sv(nCi);
         nSlot = nPo * nTimeFrame;
         cuint cap = nSlot - nCo;
-        size_t cnt = 0, ct1 = 0, ct2 = 0, t;
+        uint cnt = 0, ct1 = 0, ct2 = 0, t;
         slots = new int[nSlot];
-        for(size_t i=0; i<nSlot; ++i) slots[i] = -1;
+        for(uint i=0; i<nSlot; ++i) slots[i] = -1;
 
-        for(size_t i=0; i<nCo; ++i) {
+        for(uint i=0; i<nCo; ++i) {
             assert((ct1 < nTimeFrame) && (ct2 < nPo));
             sv |= sVecs[sIdx[i]];
             
             // current CO can be put at t^th time-frame
-            t = (size_t)ceil(float(sv.count()) / float(nPi));
+            t = (uint)ceil(float(sv.count()) / float(nPi));
             if(t) --t;
 
             if(t <= ct1) {
@@ -109,9 +109,9 @@ static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo
     assert(legal && slots && (nSlot == nPo * nTimeFrame));
 
     // update oPerm
-    //for(size_t i=0; i<nSlot; ++i) cout << slots[i] << " ";
+    //for(uint i=0; i<nSlot; ++i) cout << slots[i] << " ";
     //cout << endl;
-    for(size_t i=0; i<nSlot; ++i) if(slots[i] != -1)
+    for(uint i=0; i<nSlot; ++i) if(slots[i] != -1)
         oPerm[slots[i]] = i;
     assert(checkPerm(oPerm, nCo, nSlot));
 
@@ -126,7 +126,7 @@ static double getScore(const vector<SupVecs> &sVecss, cuint t, cuint i, const do
 {
     if(sVecss[t][i].count() == 0) return 0.0;
     double ret = 0.0;
-    for(size_t tt = 0; tt<t; ++tt)
+    for(uint tt = 0; tt<t; ++tt)
         ret += double((sVecss[t][i] & sVecss[tt][i]).count()) * pow(ratio, t-tt-1);
     return ret;
 }
@@ -136,22 +136,22 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
 {
     vector<SupVecs> sVecss;  sVecss.reserve(nTimeFrame);
     SupVec csv(nCi);
-    for(size_t t=0; t<nTimeFrame; ++t) {
+    for(uint t=0; t<nTimeFrame; ++t) {
         sVecss.push_back(SupVecs(nPo, SupVec(nCi)));
-        for(size_t i=0; i<nPi; ++i)
+        for(uint i=0; i<nPi; ++i)
             csv[dd->invperm[t*nPi + i]] = 1;
         assert(csv.count() == nPi*(t+1));
 
-        for(size_t i=0; i<nPo; ++i) if(slots[t*nPo + i] != -1) {
+        for(uint i=0; i<nPo; ++i) if(slots[t*nPo + i] != -1) {
             sVecss[t][i] = csv ^ sVecs[slots[t*nPo + i]];
             assert(sVecss[t][i].count() <= nPi);
         }
     }
 
-    for(size_t t=1; t<nTimeFrame; ++t) for(size_t i=0; i<nPo; ++i) {
+    for(uint t=1; t<nTimeFrame; ++t) for(uint i=0; i<nPo; ++i) {
         double maxScore = -1.0, score;
         int maxIdx = -1;
-        for(size_t j=i; j<nPo; ++j) {
+        for(uint j=i; j<nPo; ++j) {
             // compute score
             score = getScore(sVecss, t, j);
             if(score > maxScore) {
@@ -168,7 +168,7 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
     }
 
     // update oPerm
-    for(size_t i=0; i<nPo*nTimeFrame; ++i) if(slots[i] != -1)
+    for(uint i=0; i<nPo*nTimeFrame; ++i) if(slots[i] != -1)
         oPerm[slots[i]] = i;
     assert(checkPerm(oPerm, nCo, nPo*nTimeFrame));
 
@@ -178,21 +178,21 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
 // places PIs at correct positions and reduces BDD size
 static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger)
 {
-    size_t pos = 0;  // current PI position
-    vector<size_t> sNums;  sNums.reserve(nTimeFrame);  // for reordering
+    uint pos = 0;  // current PI position
+    vector<uint> sNums;  sNums.reserve(nTimeFrame);  // for reordering
     SupVec sv1(nCi);  // accumulated supports
-    for(size_t t=0; t<nTimeFrame; ++t) {
-        size_t ppos = pos;
+    for(uint t=0; t<nTimeFrame; ++t) {
+        uint ppos = pos;
         SupVec sv2(nCi);  // supports of POs at current time-frame
         SupVec sv3(sv1);  // a copy of sv1
-        for(size_t i=0; i<nPo; ++i) if(slots[t*nPo + i] != -1)
+        for(uint i=0; i<nPo; ++i) if(slots[t*nPo + i] != -1)
             sv2 |= sVecs[slots[t*nPo + i]];
         
         sv1 |= sv2;  // upadate sv1
         sv3 ^= sv1;  // PIs needed at current time-frame
 
         // store invperm info. in iPerm
-        for(size_t i=0; i<nCi; ++i) if(sv3[i])
+        for(uint i=0; i<nCi; ++i) if(sv3[i])
             //iPerm[i] = pos++;  // perm
             iPerm[pos++] = i;  // invperm
         sNums.push_back(pos - ppos);
@@ -204,21 +204,21 @@ static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
 
     // reord to minimize #nodes
     pos = 0;
-    for(size_t& sz: sNums) if(sz) {
+    for(uint& sz: sNums) if(sz) {
         bddUtils::bddReordRange(dd, pos, sz);
         pos += sz;
     }
     assert(pos == nCi);
     
     // update iPerm
-    for(size_t i=0; i<nCi; ++i)
+    for(uint i=0; i<nCi; ++i)
         iPerm[i] = dd->perm[i];
     assert(checkPerm(iPerm, nCi, nCi));
 
     if(logger) logger->log("reord PI");
 }
 
-size_t reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity)
+uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity)
 {
     cuint nCi = Abc_NtkCiNum(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
@@ -229,8 +229,8 @@ size_t reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int
     initSupVecs(pNtk, dd, nodeVec, sVecs, nCi, logger);
     
     // determine the lower bound of #pins
-    size_t nPo = (size_t)ceil(float(nCo) / float(nTimeFrame));
-    size_t nPi = nCi / nTimeFrame;
+    uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
+    uint nPi = nCi / nTimeFrame;
 
     int *slots = reordPO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger);
     reordPI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger);

@@ -13,7 +13,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 
     st__generator *cGen, *nGen;
     DdNode *cKNode, *cVNode, *nKNode, *nVNode;
-    size_t cCnt = 0, nCnt = 0;
+    uint cCnt = 0, nCnt = 0;
     
     DdNode **oFuncs  = (i==nTimeFrame-1) ? new DdNode*[nCo] : NULL;
     DdNode *F, *G, *path, *bCube, *tmp1, *tmp2;
@@ -25,7 +25,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         // get output function of current state
         // oFunc = cofactor(f_k, cube)
         bCube = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(bCube);  // bdd of the cube
-        if(oFuncs) for(size_t k=0; k<nCo; ++k) {
+        if(oFuncs) for(uint k=0; k<nCo; ++k) {
             oFuncs[k] = Cudd_Cofactor(dd, pNodeVec[k], bCube);
             Cudd_Ref(oFuncs[k]);
         }
@@ -35,7 +35,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         // encode output on/off-sets
         if(oFuncs) {
             F = b0;  Cudd_Ref(F);
-            for(size_t k=0; k<2; ++k) {
+            for(uint k=0; k<2; ++k) {
                 bddNotVec(oFuncs, nCo);   // 2*negation overall
                 tmp1 = bddDot(dd, oFuncs, B+k*nCo, nCo);
                 tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
