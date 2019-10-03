@@ -77,4 +77,15 @@ private:
     ofstream    fp;
 }; // end class TimeLogger
 
+class STG
+{
+public:
+    void addOneTrans();
+    void setPerm();
+    void write();
+private:
+    vector<string> trans;
+    string iPerm, oPerm;
+}; // end class STG
+
 } // end namespace utils

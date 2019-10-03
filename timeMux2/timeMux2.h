@@ -6,7 +6,7 @@ namespace timeMux2
 {
 
 // bddMux.cpp
-int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *iPerm, int *oPerm, vector<string>& stg, const bool verbosity, const char *logFileName);
+int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, vector<string>& stg, const bool verbosity, const char *logFileName);
 // reord.cpp
 uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity);
 // checkEqv.cpp

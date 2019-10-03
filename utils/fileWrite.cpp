@@ -75,7 +75,7 @@ void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint nPi, cuint nPo
         tmp1 = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(tmp1);
 
         for(uint k=0; k<nPo; ++k) {
-            if(oFuncs) {
+            if(oFuncs && oFuncs[k]) {
                 tmp2 = Cudd_Cofactor(dd, oFuncs[k], tmp1);  Cudd_Ref(tmp2);
                 assert(Cudd_Regular(tmp2) == b1);
                 if(tmp2 == b0) trans += "0";

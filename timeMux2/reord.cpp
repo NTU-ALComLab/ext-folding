@@ -55,7 +55,7 @@ class SupVecCompFunc
 
 // reorders the circuit output, returns the configuration of each time-slot
 // remember to free the returned "slots" array afterwards
-static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger)
+static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
 {
     // sort each CO by #1s in its support vector
     uint *sIdx = new uint[nCo];
@@ -108,17 +108,31 @@ static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo
     } while(!legal && ++nPo);
     assert(legal && slots && (nSlot == nPo * nTimeFrame));
 
-    // update oPerm
     //for(uint i=0; i<nSlot; ++i) cout << slots[i] << " ";
     //cout << endl;
+    // update oPerm
     for(uint i=0; i<nSlot; ++i) if(slots[i] != -1)
         oPerm[slots[i]] = i;
     assert(checkPerm(oPerm, nCo, nSlot));
 
-    if(logger) logger->log("reord PO");
-
     //delete [] slots;
     delete [] sIdx;
+
+    if(verbosity) {
+        cout << "reord PO:\n";
+        cout << "-slots:\n";
+        for(uint t=0; t<nTimeFrame; ++t) {
+            cout << "\t";
+            for(uint i=0; i<nPo; ++i) cout << setw(4) << slots[t*nPo + i] << " ";
+            cout << "\n";
+        }
+        cout << "-oPerm:\n\t";
+        for(uint i=0; i<nCo; ++i) cout << setw(4) << oPerm[i] << " ";
+        cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+    }
+
+    if(logger) logger->log("reord PO");
+    
     return slots;
 }
 
@@ -132,34 +146,59 @@ static double getScore(const vector<SupVecs> &sVecss, cuint t, cuint i, const do
 }
 
 // better pin sharing
-static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger)
+static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
 {
+  /*
+    for(uint i=0; i<sVecs.size(); ++i)
+        cout << i << ": " << sVecs[i] << endl;
+  */
+
     vector<SupVecs> sVecss;  sVecss.reserve(nTimeFrame);
-    SupVec csv(nCi);
+    SupVec psv(nCi);
     for(uint t=0; t<nTimeFrame; ++t) {
-        sVecss.push_back(SupVecs(nPo, SupVec(nCi)));
-        for(uint i=0; i<nPi; ++i)
-            csv[dd->invperm[t*nPi + i]] = 1;
-        assert(csv.count() == nPi*(t+1));
+        if(t) for(uint i=0; i<nPi; ++i)
+            psv[dd->invperm[(t-1)*nPi + i]] = 1;
+        assert(psv.count() == nPi*t);
+
+        sVecss.push_back(SupVecs(nPo, SupVec(nPi)));
 
         for(uint i=0; i<nPo; ++i) if(slots[t*nPo + i] != -1) {
-            sVecss[t][i] = csv ^ sVecs[slots[t*nPo + i]];
-            assert(sVecss[t][i].count() <= nPi);
+            const SupVec sv =  sVecs[slots[t*nPo + i]] ^ (psv & sVecs[slots[t*nPo + i]]);
+            assert(sv.count() <= nPi);
+            for(uint j=0; j<sv.size(); ++j) if(sv[j]) {
+                cuint pos = cuddI(dd, j) % nPi;
+                assert(!sVecss[t][i][pos]);
+                sVecss[t][i][pos] = 1;
+            }
         }
     }
 
+  /*
+    for(SupVecs& svs: sVecss) {
+        for(SupVec& sv: svs) {
+            for(uint i=0; i<sv.size(); ++i) cout << sv[i];
+            cout << "\n";
+        }
+        cout << "--------------------------\n";
+    }
+  */
+
+    if(verbosity) cout << "reord PO-2:\n-scoring:\n";
     for(uint t=1; t<nTimeFrame; ++t) for(uint i=0; i<nPo; ++i) {
         double maxScore = -1.0, score;
         int maxIdx = -1;
+        if(verbosity) cout << "\tround " << t << "," << i << ": ";
         for(uint j=i; j<nPo; ++j) {
             // compute score
             score = getScore(sVecss, t, j);
+            if(verbosity) cout << j << "(" << slots[t*nPo + j] << ")" << "->" << score << " ";
             if(score > maxScore) {
                 maxScore = score;
                 maxIdx = j;
             }
         }
-        assert((maxScore > 0.0) && (maxIdx > 0));
+        if(verbosity) cout << "\n";
+        assert((maxScore >= 0.0) && (maxIdx > -1));
 
         if(maxIdx != i) {
             swap(slots[t*nPo + i], slots[t*nPo + maxIdx]);
@@ -172,12 +211,26 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
         oPerm[slots[i]] = i;
     assert(checkPerm(oPerm, nCo, nPo*nTimeFrame));
 
+    if(verbosity) {
+        cout << "-slots:\n";
+        for(uint t=0; t<nTimeFrame; ++t) {
+            cout << "\t";
+            for(uint i=0; i<nPo; ++i) cout << setw(4) << slots[t*nPo + i] << " ";
+            cout << "\n";
+        }
+        cout << "-oPerm:\n\t";
+        for(uint i=0; i<nCo; ++i) cout << setw(4) << oPerm[i] << " ";
+        cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+    }
+
     if(logger) logger->log("reord PO-2");
 }
 
 // places PIs at correct positions and reduces BDD size
-static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger)
+static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger, const bool verbosity)
 {
+    if(verbosity)  cout << "reord PI:\n-slots:\n";
+
     uint pos = 0;  // current PI position
     vector<uint> sNums;  sNums.reserve(nTimeFrame);  // for reordering
     SupVec sv1(nCi);  // accumulated supports
@@ -192,28 +245,60 @@ static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
         sv3 ^= sv1;  // PIs needed at current time-frame
 
         // store invperm info. in iPerm
-        for(uint i=0; i<nCi; ++i) if(sv3[i])
+        if(verbosity) cout << "\t";
+        for(uint i=0; i<nCi; ++i) if(sv3[i]) {
             //iPerm[i] = pos++;  // perm
             iPerm[pos++] = i;  // invperm
+            if(verbosity) cout << setw(4) << i << " ";
+        }
+        if(verbosity) cout << "\n";
+
         sNums.push_back(pos - ppos);
     }
-    assert(checkPerm(iPerm, nCi, nCi) && (pos == nCi));
+
+    // dummy PIs
+    if(pos != nCi) {
+        if(verbosity) cout << "\t";
+        for(uint i=0; i<nCi; ++i) if(!sv1[i]) {
+            iPerm[pos++] = i;
+            if(verbosity) cout << setw(4) << i << " ";
+        }
+        if(verbosity) cout << "(dummies)\n";
+    }
 
     // apply iPerm
+    assert(checkPerm(iPerm, nCi, nCi) && (pos == nCi));
     assert(Cudd_ShuffleHeap(dd, iPerm));
 
     // reord to minimize #nodes
     pos = 0;
     for(uint& sz: sNums) if(sz) {
         bddUtils::bddReordRange(dd, pos, sz);
+        
+        // check if PI order is shifted within specified range
+        for(uint i=pos, j=pos+sz; i<j; ++i) {
+            cuint lev = cuddI(dd, iPerm[i]);
+            assert((lev >= pos) && (lev < j));
+        }
+
         pos += sz;
     }
-    assert(pos == nCi);
     
     // update iPerm
     for(uint i=0; i<nCi; ++i)
         iPerm[i] = dd->perm[i];
     assert(checkPerm(iPerm, nCi, nCi));
+
+    if(verbosity) {
+        cuint nPi = nCi / nTimeFrame;
+        cout << "-inv iPerm:\n";
+        for(uint t=0; t<nTimeFrame; ++t) {
+            cout << "\t";
+            for(uint i=0; i<nPi; ++i) cout << setw(4) << dd->invperm[t*nPi +i] << " ";
+            cout << "\n";
+        }
+        cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+    }
 
     if(logger) logger->log("reord PI");
 }
@@ -232,14 +317,13 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
     uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
     uint nPi = nCi / nTimeFrame;
 
-    int *slots = reordPO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger);
-    reordPI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger);
-    reordPO2(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger);
-
+    int *slots = reordPO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
+    reordPI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbosity);
+    reordPO2(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
 
     delete [] slots;
     delete [] nodeVec;
-    return 0;
+    return nPo;
 }
 
 } // end namespace timeMux2

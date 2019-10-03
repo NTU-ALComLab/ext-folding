@@ -80,6 +80,7 @@ DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint len)
     DdNode *ret = Cudd_ReadLogicZero(dd);  Cudd_Ref(ret);
     DdNode *tmp1, *tmp2;
     for(uint i=0; i<len; ++i) {
+        if((*(v1+i) == NULL) || (*(v1+i) == NULL)) continue;  // take care of NULL pointers
         tmp1 = Cudd_bddAnd(dd, *(v1+i), *(v2+i));  Cudd_Ref(tmp1);
         tmp2 = Cudd_bddOr(dd, ret, tmp1);  Cudd_Ref(tmp2);
         Cudd_RecursiveDeref(dd, ret);
@@ -93,13 +94,13 @@ DdNode* bddDot(DdManager *dd, DdNode **v1, DdNode **v2, cuint len)
 // negate an array of bdd nodes
 void bddNotVec(DdNode **vec, cuint len)
 {
-    for(uint i=0; i<len; ++i)
+    for(uint i=0; i<len; ++i)  if(vec[i])
         vec[i] = Cudd_Not(vec[i]);
 }
 
 void bddDerefVec(DdManager *dd, DdNode **v, cuint len)
 {
-    for(uint i=0; i<len; ++i)
+    for(uint i=0; i<len; ++i) if(v[i])
         Cudd_RecursiveDeref(dd, v[i]);
 }
 
