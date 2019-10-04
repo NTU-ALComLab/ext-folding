@@ -56,7 +56,7 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo = true);
 void aigRemovePo(Abc_Ntk_t* pNtk, cuint idx);
 } // end namespace aigUtils
 
-
+// deprecated!!
 namespace fileWrite
 {
 // fileWrite.cpp
@@ -80,12 +80,15 @@ private:
 class STG
 {
 public:
-    void addOneTrans();
-    void setPerm();
-    void write();
+    STG(cuint nci, cuint nco, cuint npi, cuint npo, cuint ntf): nCi(nci), nCo(nco), nPi(npi), nPo(npo), nTimeFrame(ntf) {}
+    void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint i, cuint cCnt, cuint nCnt);
+    void write(ostream& fp, int *iPerm = NULL, int *oPerm = NULL);
+    void setNSts(cuint nsts) { nSts = nsts; }
 private:
-    vector<string> trans;
-    string iPerm, oPerm;
+    void writePerm(int *perm, ostream& fp, bool isPi);
+
+    vector<string> transs;
+    uint nCi, nCo, nPi, nPo, nTimeFrame, nSts;
 }; // end class STG
 
 } // end namespace utils

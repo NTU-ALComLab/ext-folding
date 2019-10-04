@@ -75,14 +75,17 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     delete [] oFuncs;
 }
 
-int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity)
+int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity, const char *logFileName)
 {
+    TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
+
     // initialize bdd manger (disable var. reordering)
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
         return 0;
     }
+    if(logger) logger->log("init bdd man");
     
     // get basic settings
     cuint nCo = Abc_NtkCoNum(pNtk);
@@ -100,6 +103,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     uint nB = nPo ? (uint)ceil(log2(double(nPo*2))) : 0;
     DdNode **B = bddComputeSign(dd, nPo*2);
     assert(initVarSize+nB == Cudd_ReadSize(dd));
+    if(logger) logger->log("prepare sign");
     
     // collecting states at each timeframe
     uint stsSum = 1;
@@ -109,14 +113,10 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     DdNode *tmp1, *tmp2;
     
     for(i=nTimeFrame-1; i>=0; --i) {
-        vector<clock_t> tVec;
-        
         // cutting bdd, starting from last timeframe
         // F = A_t * f_t + A_t-1 * f_t-1 + ...
         // f_k = B_1 * f_k_1 + B_2 * f_k_2 + ... + f_k_nPo
         if(i) {
-            tVec.push_back(clock());  // t0: init
-            
             // states from (i+1)^th time-frame (pFuncs)
             uint pCnt = 0, nFuncs = st__count(nsts);
             DdNode **pFuncs = new DdNode*[nFuncs];
@@ -146,13 +146,12 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
             
             Cudd_RecursiveDeref(dd, ft);
             Cudd_RecursiveDeref(dd, tmp2);
-
-            tVec.push_back(clock());  // t1: after building hyper-function
+            if(logger) logger->log("hyper-" + to_string(i));
             
             // cut set enumeration
             csts = Extra_bddNodePathsUnderCut(dd, tmp1, nVar*i);
 
-            tVec.push_back(clock());  // t2: after BDD cut
+            if(logger) logger->log("cut-" + to_string(i));
             
             Cudd_RecursiveDeref(dd, tmp1);
 
@@ -162,25 +161,18 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         }
         else csts = bddCreateDummyState(dd);  // i==0
 
-        if(tVec.empty()) for(uint j=0; j<3; ++j) tVec.push_back(clock());
-        
         stsSum += st__count(csts);
         
         if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
 
         buildTrans(dd, pNodeVec, B, nVar, nPo, nTimeFrame, i, csts, nsts, stg);
-
-        tVec.push_back(clock()); // t3
+        if(logger) logger->log("trans-" + to_string(i));
         
         // replace nsts with csts, and enter next iteration
         bddFreeTable(dd, nsts);
         nsts = csts;
-        
-        if(verbosity) {
-            for(uint j=1; j<tVec.size(); ++j)
-                cout << setw(7) << double(tVec[j]-tVec[j-1])/CLOCKS_PER_SEC << " ";
-            cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
-        }
+        if(verbosity) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
+        if(logger) logger->log("next-" + to_string(i));
     }
     
 
@@ -197,6 +189,11 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     // free bdd manger
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
+
+    if(logger) {
+        logger->log("free memory");
+        delete logger;
+    }
 
     return stsSum;
 }

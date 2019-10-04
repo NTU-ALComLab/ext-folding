@@ -7,8 +7,7 @@ namespace timeMux2
 {
 
 // build transitions of the states from consecutive time-frames
-// build transitions of the states from consecutive time-frames
-void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, vector<string>& stg)
+void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, STG *stg)
 {
     int *cube;  CUDD_VALUE_TYPE val;  DdGen *gen;
 
@@ -61,7 +60,8 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
 
                 // add transition (cst->nst) to STG
-                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
+                stg->addOneTrans(dd, G, oFuncs, i, cCnt, nCnt);  // G is deref by addOneTrans()
+                //fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // deprecated
 
             }
 
@@ -78,7 +78,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     delete [] oFuncs;
 }
 
-int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, vector<string>& stg, const bool verbosity, const char *logFileName)
+STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbosity, const char *logFileName)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
     
@@ -86,7 +86,7 @@ int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 1, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
-        return 0;
+        return NULL;
     }
     if(logger) logger->log("init bdd man");
 
@@ -95,6 +95,9 @@ int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm
     cuint nCo = Abc_NtkCoNum(pNtk);
     cuint nPi = nCi / nTimeFrame;
     nPo = reordIO(pNtk, dd, nTimeFrame, iPerm, oPerm, logger, verbosity);
+
+    // init STG
+    STG *stg = new STG(nCi, nCo, nPi, nPo, nTimeFrame);
 
     DdNode **nodeVec = new DdNode*[nPo * nTimeFrame];
     for(uint i=0; i<nPo*nTimeFrame; ++i)
@@ -174,6 +177,7 @@ int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm
             cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
     }
 
+    stg->setNSts(stsSum);  // update #states
 
     // free arrays
     bddFreeVec(dd, B, 2*nPo);
@@ -185,7 +189,6 @@ int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm
         cout << "--------------------------------------------------" << endl;
     }
 
-    
     // free bdd manger
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
@@ -195,7 +198,7 @@ int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm
         delete logger;
     }
 
-    return stsSum;
+    return stg;
 }
 
 

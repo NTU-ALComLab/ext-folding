@@ -6,7 +6,7 @@ namespace timeFold
 {
 
 // bddFold.cpp
-int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity);
+int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity, const char* logFileName);
 
 // aigFold.cpp
 

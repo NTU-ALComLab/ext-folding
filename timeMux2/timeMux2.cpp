@@ -12,9 +12,9 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     bool mode = false, cec = false, verbosity = true;
     char *logFileName = NULL;
 
-    vector<string> stg;
+    STG *stg = NULL;
     ostream *fp;
-    int nTimeFrame = -1, nSts = -1;
+    int nTimeFrame = -1;
     int *iPerm, *oPerm;
     uint nCi, nPi, nCo, nPo;
 
@@ -69,13 +69,15 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     iPerm = new int[nCi];
     oPerm = new int[nCo];
 
-    if(!mode) nSts = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, stg, verbosity, logFileName);
+    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbosity, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
     
-    if(nSts > 0) {
-        fileWrite::writePerm(iPerm, nCi, *fp);
-        fileWrite::writePerm(oPerm, nCo, *fp, false);
-        fileWrite::writeKiss(nPi, nPo*nTimeFrame, nSts, stg, *fp);
+    if(stg) {
+        stg->write(*fp, iPerm, oPerm);
+        // fileWrite is deprecated
+        //fileWrite::writePerm(iPerm, nCi, *fp);
+        //fileWrite::writePerm(oPerm, nCo, *fp, false);
+        //fileWrite::writeKiss(nPi, nPo*nTimeFrame, nSts, stg, *fp);
         //if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
@@ -84,6 +86,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     Abc_NtkDelete(pNtk);
     delete [] iPerm;
     delete [] oPerm;
+    if(stg) delete stg;
 
     return 0;
 

@@ -367,7 +367,6 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
         cerr << "#nodes exceeds the maximum limit." << endl;
         return 0;
     }
-    
     if(logger) logger->log("init bdd man");
 
     // get basic settings
@@ -466,7 +465,6 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
     Abc_NtkFreeGlobalBdds(pNtk, 0);
     Cudd_Quit(dd);
     //Abc_NtkDelete(pNtk);  // method 1
-    
     
     if(logger) {
         logger->log("free memory");
