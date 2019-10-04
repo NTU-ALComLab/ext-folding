@@ -11,9 +11,9 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     Abc_Ntk_t *pNtk;
     bool mode = false, verbosity = true;
     char *logFileName = NULL;
-    vector<string> stg;
+    STG *stg;
     ostream *fp;
-    int nTimeFrame = -1, nSts = -1;
+    int nTimeFrame = -1;
     uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
@@ -63,15 +63,16 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     assert(nCo == nPo * nTimeFrame);
 
-    if(!mode) nSts = bddFold(pNtk, nTimeFrame, stg, verbosity, logFileName);
+    if(!mode) stg = bddFold(pNtk, nTimeFrame, verbosity, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
     //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbosity);
     
-    if(nSts > 0) fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
+    if(stg) stg->write(*fp);  //fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
     else cerr << "Something went wrong in time_fold!!" << endl;
     
     if(fp != &cout) delete fp;
     Abc_NtkDelete(pNtk);
+    if(stg) delete stg;
 
     return 0;
 

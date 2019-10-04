@@ -12,15 +12,16 @@ namespace timeMux
 {
 
 // dump tmp kiss file and perform minimization
-static inline void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, cuint nSts, const vector<string>& stg, cuint pid)
+static inline void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid)
 {
     char buf1[100], buf2[1000];
-    cuint nPi = Abc_NtkCiNum(pNtk) / nTimeFrame;
-    cuint nPo = Abc_NtkCoNum(pNtk);
+    //cuint nPi = Abc_NtkCiNum(pNtk) / nTimeFrame;
+    //cuint nPo = Abc_NtkCoNum(pNtk);
     
     sprintf(buf1, "%u-stg.kiss", pid);
     ofstream fp = ofstream(buf1);
-    fileWrite::writeKiss(nPi, nPo, nSts, stg, fp);
+    stg->write(fp);
+    //fileWrite::writeKiss(nPi, nPo, nSts, stg, fp);
     fp.close();
 
     sprintf(buf2, "./MeMin %s %u-mstg.kiss > /dev/null", buf1, pid);
@@ -68,11 +69,11 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
     return pNtk;
 }
 
-void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, const vector<string>& stg, cuint nSts)
+void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg)
 {
     uint pid = (uint)getpid();  // name the tmp dump files with pid to avoid name collision
 
-    dumpSTG(pNtk, nTimeFrame, nSts, stg, pid);
+    dumpSTG(pNtk, nTimeFrame, stg, pid);
     dumpBLIF(pid);
     Abc_Ntk_t *pNtkCheck = prepNtkToCheck(nTimeFrame, perm, pid);
     

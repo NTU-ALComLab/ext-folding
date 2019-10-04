@@ -1,3 +1,6 @@
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
 #include "base/main/main.h"
 #include "base/main/mainInt.h"
 
@@ -92,3 +95,5 @@ private:
 }; // end class STG
 
 } // end namespace utils
+
+#endif /* __UTILS_H__ */

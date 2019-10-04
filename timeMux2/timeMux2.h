@@ -1,3 +1,6 @@
+#ifndef __TIMEMUX2_H__
+#define __TIMEMUX2_H__
+
 #include "ext-folding/utils/utils.h"
 
 using namespace utils;
@@ -6,7 +9,6 @@ namespace timeMux2
 {
 
 // bddMux.cpp
-//int bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, vector<string>& stg, const bool verbosity, const char *logFileName);
 STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbosity, const char *logFileName);
 // reord.cpp
 uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity);
@@ -14,3 +16,5 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
 //void checkEqv(Abc_Ntk_t *pNtk, uint *perm, cuint nTimeFrame, const vector<string>& stg, cuint nSts);
 
 } // end namespace timeMux2
+
+#endif /* __TIMEMUX2_H__ */

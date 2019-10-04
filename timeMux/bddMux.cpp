@@ -12,7 +12,7 @@ namespace timeMux
 {
 
 // build transitions of the states from consecutive time-frames
-void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nCo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, vector<string>& stg)
+void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nCo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, STG *stg)
 {
     int *cube;  CUDD_VALUE_TYPE val;  DdGen *gen;
 
@@ -66,8 +66,8 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
 
                 // add transition (cst->nst) to STG
-                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nCo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
-
+                stg->addOneTrans(dd, G, oFuncs, i, cCnt, nCnt);  // G is deref by addOneTrans()
+                //fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // deprecated
             }
 
             Cudd_RecursiveDeref(dd, path);
@@ -314,7 +314,7 @@ int buildAigHyper(Abc_Ntk_t *&pNtk, cuint optRnd = 3)
     return Abc_NtkCo(pNtk, nCo)->Id;
 }
 
-int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
+STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
@@ -362,10 +362,9 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
   /*  method 2: collapse first, then build hyper-function on BDD  */
     // initialize bdd manger
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, (int)(perm!=NULL), 0, 0);
-    //DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
-        return 0;
+        return NULL;
     }
     if(logger) logger->log("init bdd man");
 
@@ -373,6 +372,8 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
     cuint nCo = Abc_NtkCoNum(pNtk);
     cuint initVarSize = Cudd_ReadSize(dd);
     cuint nVar = initVarSize / nTimeFrame;
+
+    STG *stg = new STG(initVarSize, nCo*nTimeFrame, nVar, nCo, nTimeFrame);
     
     int i; Abc_Obj_t *pObj;
     DdNode **pNodeVec = new DdNode*[nCo];
@@ -437,7 +438,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
 
         stsSum += st__count(csts);
         
-        if(verbosity) cout << "@t=" << i << ":" << setw(7) << st__count(csts) << " states,";
+        if(verbosity) cout << "@t=" << i << ":" << setw(7) << st__count(csts) << " states, ";
 
         buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
         if(logger) logger->log("trans-" + to_string(i));
@@ -450,6 +451,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
         if(logger) logger->log("next-" + to_string(i));
     }
     
+    stg->setNSts(stsSum);  // update #states
 
     // free arrays
     bddFreeVec(dd, B, 2*nCo);
@@ -471,7 +473,7 @@ int bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, int *perm, co
         delete logger;
     }
 
-    return stsSum;
+    return stg;
 }
 
 

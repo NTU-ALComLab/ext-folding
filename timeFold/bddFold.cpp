@@ -7,7 +7,7 @@ namespace timeFold
 {
 
 // build transitions of the states from consecutive time-frames
-void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, vector<string>& stg)
+void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint nPo, cuint nTimeFrame, cuint i, st__table *csts, st__table *nsts, STG *stg)
 {
     int *cube;  CUDD_VALUE_TYPE val;  DdGen *gen;
 
@@ -26,8 +26,10 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         // oFunc = cofactor(f_k, cube)
         bCube = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(bCube);  // bdd of the cube
         for(uint k=0; k<nPo; ++k) {
-            oFuncs[k] = Cudd_Cofactor(dd, pNodeVec[i*nPo+k], bCube);
-            Cudd_Ref(oFuncs[k]);
+            if(pNodeVec[i*nPo+k]) {
+                oFuncs[k] = Cudd_Cofactor(dd, pNodeVec[i*nPo+k], bCube);
+                Cudd_Ref(oFuncs[k]);
+            } else oFuncs[k] = NULL;
         }
         
         Cudd_GenFree(gen);
@@ -58,7 +60,8 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
                 G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
 
                 // add transition (cst->nst) to STG
-                fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // G is deref by addOneTrans()
+                stg->addOneTrans(dd, G, oFuncs, i, cCnt, nCnt);  // G is deref by addOneTrans()
+                //fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // deprecated
 
             }
 
@@ -75,7 +78,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     delete [] oFuncs;
 }
 
-int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool verbosity, const char *logFileName)
+STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbosity, const char *logFileName)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
@@ -83,7 +86,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     DdManager *dd = (DdManager*)Abc_NtkBuildGlobalBdds(pNtk, ABC_INFINITY, 1, 0, 0, 0);
     if(!dd) {
         cerr << "#nodes exceeds the maximum limit." << endl;
-        return 0;
+        return NULL;
     }
     if(logger) logger->log("init bdd man");
     
@@ -92,6 +95,8 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
     cuint nPo = nCo / nTimeFrame;
     cuint initVarSize = Cudd_ReadSize(dd);
     cuint nVar = initVarSize / nTimeFrame;
+
+    STG *stg = new STG(initVarSize, nCo, nVar, nPo, nTimeFrame);
     
     // get PO at each timeframe
     int i; Abc_Obj_t *pObj;
@@ -175,6 +180,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         if(logger) logger->log("next-" + to_string(i));
     }
     
+    stg->setNSts(stsSum);  // update #states
 
     // free arrays
     bddFreeVec(dd, B, 2*nPo);
@@ -195,7 +201,7 @@ int bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, vector<string>& stg, const bool v
         delete logger;
     }
 
-    return stsSum;
+    return stg;
 }
 
 

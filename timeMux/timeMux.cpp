@@ -56,9 +56,9 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     char *logFileName = NULL;
     int *perm = NULL;
 
-    vector<string> stg;
+    STG *stg = NULL;
     ostream *fp;
-    int nTimeFrame = -1, nSts = -1;
+    int nTimeFrame = -1;
     uint nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
@@ -115,20 +115,22 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     if(perm) perm = new int[nCi];
 
-    if(!mode) nSts = bddMux(pNtk, nTimeFrame, stg, perm, verbosity, logFileName);
+    if(!mode) stg = bddMux(pNtk, nTimeFrame, perm, verbosity, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
     //else nSts = aigFold(pNtk, nTimeFrame, stg, verbosity);
     
-    if(nSts > 0) {
-        fileWrite::writePerm(perm, nCi, *fp);
-        fileWrite::writeKiss(nPi, nCo, nSts, stg, *fp);
-        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
+    if(stg) {
+        stg->write(*fp, perm);
+        //fileWrite::writePerm(perm, nCi, *fp);
+        //fileWrite::writeKiss(nPi, nCo, nSts, stg, *fp);
+        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;
     if(logFileName) ABC_FREE(logFileName);
     if(perm) delete [] perm;
     Abc_NtkDelete(pNtk);
+    if(stg) delete stg;
 
     return 0;
 
