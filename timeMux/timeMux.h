@@ -13,6 +13,8 @@ STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, 
 
 // checkEqv.cpp
 void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg);
+void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid);
+void dumpBLIF(cuint pid);
 
 } // end namespace timeMux
 

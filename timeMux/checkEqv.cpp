@@ -12,7 +12,7 @@ namespace timeMux
 {
 
 // dump tmp kiss file and perform minimization
-static inline void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid)
+void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid)
 {
     char buf1[100], buf2[1000];
     //cuint nPi = Abc_NtkCiNum(pNtk) / nTimeFrame;
@@ -24,17 +24,17 @@ static inline void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pi
     //fileWrite::writeKiss(nPi, nPo, nSts, stg, fp);
     fp.close();
 
-    sprintf(buf2, "./MeMin %s %u-mstg.kiss > /dev/null", buf1, pid);
+    sprintf(buf2, "./bin/MeMin %s %u-mstg.kiss > /dev/null", buf1, pid);
     system(buf2);
     remove(buf1);
 }
 
 // convert STG to circuit in BLIF format
-static inline void dumpBLIF(cuint pid)
+void dumpBLIF(cuint pid)
 {
     char buf1[100], buf2[1000];
     sprintf(buf1, "%u-mstg.kiss", pid);
-    sprintf(buf2, "./kiss2blif %s %u-mstg.blif", buf1, pid);
+    sprintf(buf2, "./bin/kiss2blif %s %u-mstg.blif", buf1, pid);
     system(buf2);
     remove(buf1);
 }
@@ -63,7 +63,7 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
 
     // permute PIs
     if(!perm) return pNtkStr;
-    pNtk = aigUtils::aigPerm(pNtkStr, perm);
+    pNtk = aigUtils::aigPermCi(pNtkStr, perm);
     Abc_NtkDelete(pNtkStr);
 
     return pNtk;
@@ -86,6 +86,7 @@ void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg)
     Abc_NtkShortNames(pNtk);
     Abc_NtkShortNames(pNtkCheck);
     Abc_NtkCecFraig(pNtk, pNtkCheck, 50, 0);
+    Abc_NtkDelete(pNtkCheck);
 }
 
 } // end namespace timeMux

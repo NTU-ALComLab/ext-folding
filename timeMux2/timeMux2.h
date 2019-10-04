@@ -10,10 +10,13 @@ namespace timeMux2
 
 // bddMux.cpp
 STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbosity, const char *logFileName);
+
 // reord.cpp
 uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity);
+bool checkPerm(int *perm, cuint size, cuint cap);
+
 // checkEqv.cpp
-//void checkEqv(Abc_Ntk_t *pNtk, uint *perm, cuint nTimeFrame, const vector<string>& stg, cuint nSts);
+void checkEqv(Abc_Ntk_t *pNtk, int *iPerm, int *oPerm, cuint nTimeFrame, STG *stg);
 
 } // end namespace timeMux2
 

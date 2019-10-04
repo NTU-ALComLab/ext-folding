@@ -10,7 +10,7 @@ typedef vector<SupVec> SupVecs;
 namespace timeMux2
 {
 
-static bool checkPerm(int *perm, cuint size, cuint cap)
+bool checkPerm(int *perm, cuint size, cuint cap)
 {
     SupVec sv(cap);
     for(uint i=0; i<size; ++i) {

@@ -81,7 +81,7 @@ Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm)
 }
 
 // permutates the order of PIs with the given "perm"
-Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, int *perm, bool rm)
+Abc_Ntk_t* aigPermCi(Abc_Ntk_t *pNtk, int *perm, bool rm)
 {
     assert(Abc_NtkIsStrash(pNtk));
 
@@ -113,6 +113,33 @@ Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, int *perm, bool rm)
     if(rm) Abc_NtkDelete(pNtk);
 
     return pNtkPerm;
+}
+
+// permutates the order of PIs with the given "perm"
+// in-place permutation, no new AIG will be created
+void aigPermCo(Abc_Ntk_t *pNtk, int *perm)
+{
+    assert(Abc_NtkIsStrash(pNtk));
+
+    cuint nCo = Abc_NtkCoNum(pNtk);
+    Abc_Obj_t **poVec = new Abc_Obj_t*[nCo];
+    uint i;  Abc_Obj_t *pObj;
+
+    Abc_NtkForEachCo(pNtk, pObj, i) {
+        poVec[i] = Abc_ObjFanin0(pObj);
+        Abc_ObjRemoveFanins(pObj);
+    }
+
+    Abc_NtkForEachCo(pNtk, pObj, i) {
+        poVec[i] = Abc_ObjFanin0(pObj);
+        Abc_ObjRemoveFanins(pObj);
+    }
+
+    for(i=0; i<nCo; ++i)
+        Abc_ObjAddFanin(Abc_NtkCo(pNtk, i), poVec[perm[i]]);
+    
+    Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
+    assert(Abc_NtkCheck(pNtk));
 }
 
 // concatenates the given array of circuits, each circuit should have the same #PIs

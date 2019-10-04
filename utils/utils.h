@@ -45,7 +45,8 @@ namespace aigUtils
 // aigUtils.cpp
 Abc_Ntk_t* aigCone(Abc_Ntk_t *pNtk, cuint start, cuint end, bool rm=false);
 Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm=false);
-Abc_Ntk_t* aigPerm(Abc_Ntk_t *pNtk, int *perm, bool rm=false);
+Abc_Ntk_t* aigPermCi(Abc_Ntk_t *pNtk, int *perm, bool rm=false);
+void aigPermCo(Abc_Ntk_t *pNtk, int *perm);
 Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
 Abc_Ntk_t* aigMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl, bool rm = false);
 Abc_Ntk_t* aigCreateDummyState();
@@ -87,6 +88,8 @@ public:
     void addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint i, cuint cCnt, cuint nCnt);
     void write(ostream& fp, int *iPerm = NULL, int *oPerm = NULL);
     void setNSts(cuint nsts) { nSts = nsts; }
+    uint getNCo() { return nCo; }
+    uint getNPo() { return nPo; }
 private:
     void writePerm(int *perm, ostream& fp, bool isPi);
 

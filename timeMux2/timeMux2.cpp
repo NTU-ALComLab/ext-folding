@@ -78,7 +78,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         //fileWrite::writePerm(iPerm, nCi, *fp);
         //fileWrite::writePerm(oPerm, nCo, *fp, false);
         //fileWrite::writeKiss(nPi, nPo*nTimeFrame, nSts, stg, *fp);
-        //if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, nSts); 
+        if(cec) checkEqv(pNtk, iPerm, oPerm, nTimeFrame, stg); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;
