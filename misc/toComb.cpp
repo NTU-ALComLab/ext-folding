@@ -45,11 +45,12 @@ int ToComb_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: to_comb <num>\n");
+    Abc_Print(-2, "usage: to_comb [-h] <num>\n");
     Abc_Print(-2, "\t        transform current network into a purely combinational circuit, latches will be converted to PI/POs\n");
+    Abc_Print(-2, "\t-h    : print the command usage\n");
     //Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
     Abc_Print(-2, "\tnum   : (optional) the base of #PI being rounded up to [default = %lu]\n", num);
-    Abc_Print(-2, "\t-h    : print the command usage\n");
+
     return 1;
 }
 

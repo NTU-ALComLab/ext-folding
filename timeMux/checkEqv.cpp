@@ -8,6 +8,8 @@ extern "C"
 void Abc_NtkCecFraig(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, int nSeconds, int fVerbose);
 }
 
+extern int Memin_Command(Abc_Frame_t *pAbc, int argc, char **argv);
+
 namespace timeMux
 {
 
@@ -58,13 +60,11 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
 
     // retrieve the outputs from the last time-frame
     uint nPo = Abc_NtkCoNum(pNtk) / nTimeFrame;
-    pNtkStr = aigUtils::aigCone(pNtk, Abc_NtkCoNum(pNtk)-nPo, Abc_NtkCoNum(pNtk));
-    Abc_NtkDelete(pNtk);
+    pNtkStr = aigUtils::aigCone(pNtk, Abc_NtkCoNum(pNtk)-nPo, Abc_NtkCoNum(pNtk), true);
 
     // permute PIs
     if(!perm) return pNtkStr;
-    pNtk = aigUtils::aigPermCi(pNtkStr, perm);
-    Abc_NtkDelete(pNtkStr);
+    pNtk = aigUtils::aigPermCi(pNtkStr, perm, true);
 
     return pNtk;
 }

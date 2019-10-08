@@ -77,14 +77,14 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-mv] <kiss_file>\n");
-    Abc_Print(-2, "\t             fold the time-frame expanded circuit and transform it into a STG\n");
+    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-mvh] <kiss_file>\n");
+    Abc_Print(-2, "\t             folds the time-frame expanded circuit and transform it into a STG\n");
     Abc_Print(-2, "\t-t         : number of time-frames to be folded\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     Abc_Print(-2, "\t-h         : print the command usage\n");
+    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;
 }
 

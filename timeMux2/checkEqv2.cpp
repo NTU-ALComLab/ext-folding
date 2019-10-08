@@ -32,17 +32,15 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, cuint nCo, int *iPerm, int *o
     Abc_NtkDelete(pNtkStr);
 
     // permute PIs
-    pNtk = aigUtils::aigPermCi(pNtkStr, iPerm);
-    Abc_NtkDelete(pNtkStr);
+    pNtkStr = aigUtils::aigPermCi(pNtk, iPerm, true);
 
     // permute POs
-    aigUtils::aigPermCo(pNtk, oPerm);
+    aigUtils::aigPermCo(pNtkStr, oPerm);
 
     // retrieve the outputs from the last time-frame
-    pNtkStr = aigUtils::aigCone(pNtk, 0, nCo);
-    Abc_NtkDelete(pNtk);
+    pNtk = aigUtils::aigCone(pNtkStr, 0, nCo, true);
 
-    return pNtkStr;
+    return pNtk;
 }
 
 static int* extendPerm(int *perm, cuint fromSize, cuint toSize)

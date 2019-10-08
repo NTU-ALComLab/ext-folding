@@ -125,21 +125,19 @@ void aigPermCo(Abc_Ntk_t *pNtk, int *perm)
     Abc_Obj_t **poVec = new Abc_Obj_t*[nCo];
     uint i;  Abc_Obj_t *pObj;
 
+    //Abc_NtkCollect
     Abc_NtkForEachCo(pNtk, pObj, i) {
-        poVec[i] = Abc_ObjFanin0(pObj);
+        poVec[i] = Abc_ObjChild0(pObj);
         Abc_ObjRemoveFanins(pObj);
     }
+    assert(i == nCo);
 
-    Abc_NtkForEachCo(pNtk, pObj, i) {
-        poVec[i] = Abc_ObjFanin0(pObj);
-        Abc_ObjRemoveFanins(pObj);
-    }
+    Abc_NtkForEachCo(pNtk, pObj, i)
+        Abc_ObjAddFanin(pObj, poVec[perm[i]]);
 
-    for(i=0; i<nCo; ++i)
-        Abc_ObjAddFanin(Abc_NtkCo(pNtk, i), poVec[perm[i]]);
-    
     Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
     assert(Abc_NtkCheck(pNtk));
+    delete [] poVec;
 }
 
 // concatenates the given array of circuits, each circuit should have the same #PIs

@@ -21,15 +21,16 @@ bool checkPerm(int *perm, cuint size, cuint cap)
 }
 
 // initializes the support vector of each circuit output
-static void initSupVecs(Abc_Ntk_t *pNtk, DdManager *dd, DdNode **nodeVec, SupVecs &sVecs, cuint nCi, TimeLogger *logger)
+static void initSupVecs(Abc_Ntk_t *pNtk, DdManager *dd, SupVecs &sVecs, cuint nCi, TimeLogger *logger)
 {
-    int i;  Abc_Obj_t *pObj;  DdNode *sup;
+    int i;  Abc_Obj_t *pObj;
+    DdNode *node, *sup;
     int *arr = new int[nCi];
 
     SupVec sVec(nCi);
     Abc_NtkForEachCo(pNtk, pObj, i) {
-        nodeVec[i] = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
-        sup = Cudd_Support(dd, nodeVec[i]);  Cudd_Ref(sup);
+        node = (DdNode *)Abc_ObjGlobalBdd(pObj);  // ref = 1
+        sup = Cudd_Support(dd, node);  Cudd_Ref(sup);
         assert(Cudd_BddToCubeArray(dd, sup, arr));
         for(uint j=0; j<nCi; ++j)
             sVec[j] = (arr[j] != 2);
@@ -55,7 +56,7 @@ class SupVecCompFunc
 
 // reorders the circuit output, returns the configuration of each time-slot
 // remember to free the returned "slots" array afterwards
-static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
+static int* schedulePO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
 {
     // sort each CO by #1s in its support vector
     uint *sIdx = new uint[nCo];
@@ -119,7 +120,7 @@ static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo
     delete [] sIdx;
 
     if(verbosity) {
-        cout << "reord PO:\n";
+        cout << "schedule PO:\n";
         cout << "-slots:\n";
         for(uint t=0; t<nTimeFrame; ++t) {
             cout << "\t";
@@ -131,7 +132,7 @@ static int* reordPO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo
         cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
     }
 
-    if(logger) logger->log("reord PO");
+    if(logger) logger->log("schedule PO");
     
     return slots;
 }
@@ -146,7 +147,7 @@ static double getScore(const vector<SupVecs> &sVecss, cuint t, cuint i, const do
 }
 
 // better pin sharing
-static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
+static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
 {
   /*
     for(uint i=0; i<sVecs.size(); ++i)
@@ -183,7 +184,7 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
     }
   */
 
-    if(verbosity) cout << "reord PO-2:\n-scoring:\n";
+    if(verbosity) cout << "reord PO:\n-scoring:\n";
     for(uint t=1; t<nTimeFrame; ++t) for(uint i=0; i<nPo; ++i) {
         double maxScore = -1.0, score;
         int maxIdx = -1;
@@ -223,13 +224,13 @@ static void reordPO2(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTim
         cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
     }
 
-    if(logger) logger->log("reord PO-2");
+    if(logger) logger->log("reord PO");
 }
 
 // places PIs at correct positions and reduces BDD size
-static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger, const bool verbosity)
+static void schedulePI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger, const bool verbosity)
 {
-    if(verbosity)  cout << "reord PI:\n-slots:\n";
+    if(verbosity)  cout << "schedule PI:\n-slots:\n";
 
     uint pos = 0;  // current PI position
     vector<uint> sNums;  sNums.reserve(nTimeFrame);  // for reordering
@@ -265,6 +266,7 @@ static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
         }
         if(verbosity) cout << "(dummies)\n";
     }
+    if(logger) logger->log("schedule PI");
 
     // apply iPerm
     assert(checkPerm(iPerm, nCi, nCi) && (pos == nCi));
@@ -283,13 +285,9 @@ static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
 
         pos += sz;
     }
-    
-    // update iPerm
-    for(uint i=0; i<nCi; ++i)
-        iPerm[i] = dd->perm[i];
-    assert(checkPerm(iPerm, nCi, nCi));
 
     if(verbosity) {
+        cout << "reord PI:\n-slots:\n";
         cuint nPi = nCi / nTimeFrame;
         cout << "-inv iPerm:\n";
         for(uint t=0; t<nTimeFrame; ++t) {
@@ -301,6 +299,11 @@ static void reordPI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
     }
 
     if(logger) logger->log("reord PI");
+
+    // update iPerm
+    for(uint i=0; i<nCi; ++i)
+        iPerm[i] = dd->perm[i];
+    assert(checkPerm(iPerm, nCi, nCi));
 }
 
 uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity)
@@ -308,21 +311,18 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
     cuint nCi = Abc_NtkCiNum(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
 
-    DdNode **nodeVec = new DdNode*[nCo];
     SupVecs sVecs;  sVecs.reserve(nCo);
-    
-    initSupVecs(pNtk, dd, nodeVec, sVecs, nCi, logger);
+    initSupVecs(pNtk, dd, sVecs, nCi, logger);
     
     // determine the lower bound of #pins
     uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
     uint nPi = nCi / nTimeFrame;
 
-    int *slots = reordPO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
-    reordPI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbosity);
-    reordPO2(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
+    int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
+    schedulePI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbosity);
+    reordPO(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
 
     delete [] slots;
-    delete [] nodeVec;
     return nPo;
 }
 

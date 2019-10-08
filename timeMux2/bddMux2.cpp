@@ -46,7 +46,6 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
     DdNode *nKNode, *nVNode;
     DdNode *tmp1, *tmp2;
 
-
     for(int i=nTimeFrame-1; i>=0; --i) {
         // cutting bdd, starting from last timeframe
         // F = A_t * f_t + A_t-1 * f_t-1 + ...

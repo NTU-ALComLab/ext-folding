@@ -91,15 +91,15 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-mrcv] <kiss_file>\n");
+    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-mcvh] <kiss_file>\n");
     Abc_Print(-2, "\t             time multiplexing with PO pin sharing\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     Abc_Print(-2, "\t-h         : print the command usage\n");
+    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;
 }
 
