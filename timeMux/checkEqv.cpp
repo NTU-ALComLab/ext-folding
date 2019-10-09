@@ -8,7 +8,15 @@ extern "C"
 void Abc_NtkCecFraig(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, int nSeconds, int fVerbose);
 }
 
-extern int Memin_Command(Abc_Frame_t *pAbc, int argc, char **argv);
+namespace MeMin
+{
+extern int MeMin_Command(Abc_Frame_t *pAbc, int argc, char **argv);
+} // end namespace MeMin
+
+namespace kissToBlif
+{
+extern void natEnc(const char *inKiss, const char *outBlif, const bool dcVal);
+} // end namespace kissToBlif
 
 namespace timeMux
 {
@@ -16,7 +24,7 @@ namespace timeMux
 // dump tmp kiss file and perform minimization
 void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid)
 {
-    char buf1[100], buf2[1000];
+    char buf1[100], buf2[100];
     //cuint nPi = Abc_NtkCiNum(pNtk) / nTimeFrame;
     //cuint nPo = Abc_NtkCoNum(pNtk);
     
@@ -26,18 +34,23 @@ void dumpSTG(Abc_Ntk_t *pNtk, cuint nTimeFrame, STG *stg, cuint pid)
     //fileWrite::writeKiss(nPi, nPo, nSts, stg, fp);
     fp.close();
 
-    sprintf(buf2, "./bin/MeMin %s %u-mstg.kiss > /dev/null", buf1, pid);
-    system(buf2);
+    sprintf(buf2, "%u-mstg.kiss", pid);
+    char *argv[3];
+    argv[1] = buf1;
+    argv[2] = buf2;
+    MeMin::MeMin_Command(NULL, 3, argv);
+    //sprintf(buf2, "./bin/MeMin %s %u-mstg.kiss > /dev/null", buf1, pid);
+    //system(buf2);
     remove(buf1);
 }
 
 // convert STG to circuit in BLIF format
 void dumpBLIF(cuint pid)
 {
-    char buf1[100], buf2[1000];
+    char buf1[100], buf2[100];
     sprintf(buf1, "%u-mstg.kiss", pid);
-    sprintf(buf2, "./bin/kiss2blif %s %u-mstg.blif", buf1, pid);
-    system(buf2);
+    sprintf(buf2, "%u-mstg.blif", pid);
+    kissToBlif::natEnc(buf1, buf2, false);
     remove(buf1);
 }
 
