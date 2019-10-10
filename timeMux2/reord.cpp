@@ -100,8 +100,9 @@ static int* schedulePO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint 
 
                 slots[t*nPo] = sIdx[i];
                 ct1 = t;  ct2 = 1;
+                if((ct2 == nPo) && ++ct1) ct2 = 0;
             }
-            
+
             if(i == nCo-1) legal = true;
         }
 
