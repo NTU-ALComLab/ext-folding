@@ -56,7 +56,7 @@ class SupVecCompFunc
 
 // reorders the circuit output, returns the configuration of each time-slot
 // remember to free the returned "slots" array afterwards
-static int* schedulePO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
+static int* schedulePO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, uint &nPo, int *oPerm, TimeLogger *logger, const bool verbose)
 {
     // sort each CO by #1s in its support vector
     uint *sIdx = new uint[nCo];
@@ -119,7 +119,7 @@ static int* schedulePO(const SupVecs &sVecs, cuint nTimeFrame, cuint nCi, cuint 
     //delete [] slots;
     delete [] sIdx;
 
-    if(verbosity) {
+    if(verbose) {
         cout << "schedule PO:\n";
         cout << "-slots:\n";
         for(uint t=0; t<nTimeFrame; ++t) {
@@ -147,7 +147,7 @@ static double getScore(const vector<SupVecs> &sVecss, cuint t, cuint i, const do
 }
 
 // better pin sharing
-static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger, const bool verbosity)
+static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nCo, cuint nPi, cuint nPo, int *oPerm, TimeLogger *logger, const bool verbose)
 {
   /*
     for(uint i=0; i<sVecs.size(); ++i)
@@ -184,21 +184,21 @@ static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
     }
   */
 
-    if(verbosity) cout << "reord PO:\n-scoring:\n";
+    if(verbose) cout << "reord PO:\n-scoring:\n";
     for(uint t=1; t<nTimeFrame; ++t) for(uint i=0; i<nPo; ++i) {
         double maxScore = -1.0, score;
         int maxIdx = -1;
-        if(verbosity) cout << "\tround " << t << "," << i << ": ";
+        if(verbose) cout << "\tround " << t << "," << i << ": ";
         for(uint j=i; j<nPo; ++j) {
             // compute score
             score = getScore(sVecss, t, j);
-            if(verbosity) cout << j << "(" << slots[t*nPo + j] << ")" << "->" << score << " ";
+            if(verbose) cout << j << "(" << slots[t*nPo + j] << ")" << "->" << score << " ";
             if(score > maxScore) {
                 maxScore = score;
                 maxIdx = j;
             }
         }
-        if(verbosity) cout << "\n";
+        if(verbose) cout << "\n";
         assert((maxScore >= 0.0) && (maxIdx > -1));
 
         if(maxIdx != i) {
@@ -212,7 +212,7 @@ static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
         oPerm[slots[i]] = i;
     assert(checkPerm(oPerm, nCo, nPo*nTimeFrame));
 
-    if(verbosity) {
+    if(verbose) {
         cout << "-slots:\n";
         for(uint t=0; t<nTimeFrame; ++t) {
             cout << "\t";
@@ -228,9 +228,9 @@ static void reordPO(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTime
 }
 
 // places PIs at correct positions and reduces BDD size
-static void schedulePI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger, const bool verbosity)
+static void schedulePI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nTimeFrame, cuint nCi, cuint nPo, int *iPerm, TimeLogger *logger, const bool verbose, cuint expConfig)
 {
-    if(verbosity)  cout << "schedule PI:\n-slots:\n";
+    if(verbose)  cout << "schedule PI:\n-slots:\n";
 
     uint pos = 0;  // current PI position
     vector<uint> sNums;  sNums.reserve(nTimeFrame);  // for reordering
@@ -246,59 +246,60 @@ static void schedulePI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nT
         sv3 ^= sv1;  // PIs needed at current time-frame
 
         // store invperm info. in iPerm
-        if(verbosity) cout << "\t";
+        if(verbose) cout << "\t";
         for(uint i=0; i<nCi; ++i) if(sv3[i]) {
             //iPerm[i] = pos++;  // perm
             iPerm[pos++] = i;  // invperm
-            if(verbosity) cout << setw(4) << i << " ";
+            if(verbose) cout << setw(4) << i << " ";
         }
-        if(verbosity) cout << "\n";
+        if(verbose) cout << "\n";
 
         sNums.push_back(pos - ppos);
     }
 
     // dummy PIs
     if(pos != nCi) {
-        if(verbosity) cout << "\t";
+        if(verbose) cout << "\t";
         for(uint i=0; i<nCi; ++i) if(!sv1[i]) {
             iPerm[pos++] = i;
-            if(verbosity) cout << setw(4) << i << " ";
+            if(verbose) cout << setw(4) << i << " ";
         }
-        if(verbosity) cout << "(dummies)\n";
+        if(verbose) cout << "(dummies)\n";
     }
+    if(verbose) cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
     if(logger) logger->log("schedule PI");
 
     // apply iPerm
     assert(checkPerm(iPerm, nCi, nCi) && (pos == nCi));
     assert(Cudd_ShuffleHeap(dd, iPerm));
 
-    // reord to minimize #nodes
-    pos = 0;
-    for(uint& sz: sNums) if(sz) {
-        bddUtils::bddReordRange(dd, pos, sz);
-        
-        // check if PI order is shifted within specified range
-        for(uint i=pos, j=pos+sz; i<j; ++i) {
-            cuint lev = cuddI(dd, iPerm[i]);
-            assert((lev >= pos) && (lev < j));
+    if((expConfig == 0) || (expConfig == 2)) {
+        // reord to minimize #nodes
+        pos = 0;
+        for(uint& sz: sNums) if(sz) {
+            bddUtils::bddReordRange(dd, pos, sz);
+            
+            // check if PI order is shifted within specified range
+            for(uint i=pos, j=pos+sz; i<j; ++i) {
+                cuint lev = cuddI(dd, iPerm[i]);
+                assert((lev >= pos) && (lev < j));
+            }
+
+            pos += sz;
         }
 
-        pos += sz;
-    }
-
-    if(verbosity) {
-        cout << "reord PI:\n-slots:\n";
-        cuint nPi = nCi / nTimeFrame;
-        cout << "-inv iPerm:\n";
-        for(uint t=0; t<nTimeFrame; ++t) {
-            cout << "\t";
-            for(uint i=0; i<nPi; ++i) cout << setw(4) << dd->invperm[t*nPi +i] << " ";
-            cout << "\n";
+        if(verbose) {
+            cout << "reord PI:\n-inv iPerm:\n";
+            cuint nPi = nCi / nTimeFrame;
+            for(uint t=0; t<nTimeFrame; ++t) {
+                cout << "\t";
+                for(uint i=0; i<nPi; ++i) cout << setw(4) << dd->invperm[t*nPi +i] << " ";
+                cout << "\n";
+            }
+            cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
         }
-        cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+        if(logger) logger->log("reord PI");
     }
-
-    if(logger) logger->log("reord PI");
 
     // update iPerm
     for(uint i=0; i<nCi; ++i)
@@ -306,7 +307,7 @@ static void schedulePI(DdManager *dd, const SupVecs &sVecs, int *slots, cuint nT
     assert(checkPerm(iPerm, nCi, nCi));
 }
 
-uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbosity)
+uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbose, cuint expConfig)
 {
     cuint nCi = Abc_NtkCiNum(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
@@ -318,9 +319,10 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
     uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
     uint nPi = nCi / nTimeFrame;
 
-    int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
-    schedulePI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbosity);
-    reordPO(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbosity);
+    int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
+    schedulePI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbose, expConfig);
+    if((expConfig == 0) || (expConfig == 1))
+        reordPO(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
 
     delete [] slots;
     return nPo;

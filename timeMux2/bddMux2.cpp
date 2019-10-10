@@ -7,7 +7,7 @@ using namespace bddUtils;
 namespace timeMux2
 {
 
-STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbose, const char *logFileName)
+STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbose, const char *logFileName, cuint expConfig)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
     
@@ -23,7 +23,7 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
     cuint nCi = Abc_NtkCiNum(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
     cuint nPi = nCi / nTimeFrame;
-    nPo = reordIO(pNtk, dd, nTimeFrame, iPerm, oPerm, logger, verbose);
+    nPo = reordIO(pNtk, dd, nTimeFrame, iPerm, oPerm, logger, verbose, expConfig);
 
     // init STG
     STG *stg = new STG(nCi, nCo, nPi, nPo, nTimeFrame);

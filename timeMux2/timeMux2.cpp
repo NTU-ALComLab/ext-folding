@@ -15,11 +15,12 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     STG *stg = NULL;
     ostream *fp;
     int nTimeFrame = -1;
+    int expConfig = 0; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none
     int *iPerm, *oPerm;
     uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlmcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlemcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -27,6 +28,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             nTimeFrame = atoi(argv[globalUtilOptind++]);
+            if(nTimeFrame < 0) goto usage;
             break;
         case 'l':
             if(globalUtilOptind >= argc) {
@@ -34,6 +36,14 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             logFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
+            break;
+        case 'e':
+            if(globalUtilOptind >= argc) {
+                Abc_Print(-1, "Command line switch \"-e\" should be followed by an integer.\n");
+                goto usage;
+            }
+            expConfig = atoi(argv[globalUtilOptind++]);
+            if((expConfig < 0) || (expConfig > 3)) goto usage;
             break;
         case 'm':
             mode = !mode;
@@ -49,7 +59,6 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         }
     }
     
-    if(nTimeFrame < 0) goto usage;
     fp = (globalUtilOptind < argc) ? (new ofstream(argv[globalUtilOptind])) : &cout;
     
     // get pNtk
@@ -69,7 +78,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     iPerm = new int[nCi];
     oPerm = new int[nCo];
 
-    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbose, logFileName);
+    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbose, logFileName, expConfig);
     else cerr << "AIG mode currently not supported." << endl;
     
     if(stg) {
@@ -91,10 +100,11 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-mcvh] <kiss_file>\n");
+    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-e <config>] [-mcvh] <kiss_file>\n");
     Abc_Print(-2, "\t             time multiplexing with PO pin sharing\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
+    Abc_Print(-2, "\t-e         : (optional) toggles experiment configuration (0, 1, 2, 3) [default = %d]\n", expConfig);
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
