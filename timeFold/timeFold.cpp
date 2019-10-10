@@ -1,4 +1,5 @@
 #include "ext-folding/timeFold/timeFold.h"
+#include "ext-folding/timeMux/timeMux.h"
 
 using namespace timeFold;
 
@@ -9,7 +10,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk;
-    bool mode = false, verbosity = true;
+    bool mode = false, verbosity = true, cec = false;
     char *logFileName = NULL;
     STG *stg;
     ostream *fp;
@@ -17,7 +18,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlmvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlmcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -37,6 +38,9 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             break;
         case 'm':
             mode = !mode;
+            break;
+        case 'c':
+            cec = !cec;
             break;
         case 'v':
             verbosity = !verbosity;
@@ -67,8 +71,10 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     else cerr << "AIG mode currently not supported." << endl;
     //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbosity);
     
-    if(stg) stg->write(*fp);  //fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
-    else cerr << "Something went wrong in time_fold!!" << endl;
+    if(stg) {
+        stg->write(*fp);  //fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
+        if(cec) timeMux::checkEqv(pNtk, NULL, nTimeFrame, stg, false); 
+    } else cerr << "Something went wrong in time_fold!!" << endl;
     
     if(fp != &cout) delete fp;
     Abc_NtkDelete(pNtk);
@@ -77,11 +83,12 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-mvh] <kiss_file>\n");
+    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-mcvh] <kiss_file>\n");
     Abc_Print(-2, "\t             folds the time-frame expanded circuit and transform it into a STG\n");
     Abc_Print(-2, "\t-t         : number of time-frames to be folded\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
+    Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");
     Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");

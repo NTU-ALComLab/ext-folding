@@ -123,7 +123,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         stg->write(*fp, perm);
         //fileWrite::writePerm(perm, nCi, *fp);
         //fileWrite::writeKiss(nPi, nCo, nSts, stg, *fp);
-        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg); 
+        if(cec) checkEqv(pNtk, perm, nTimeFrame, stg, true); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
     
     if(fp != &cout) delete fp;

@@ -55,7 +55,7 @@ void dumpBLIF(cuint pid)
 }
 
 // prepare network for CEC
-static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
+static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid, const bool onlyLast)
 {
     // read the BLIF file
     char buf[100];
@@ -71,9 +71,11 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
     pNtk = Abc_NtkFrames(pNtkStr, nTimeFrame, 1, 0);
     Abc_NtkDelete(pNtkStr);
 
-    // retrieve the outputs from the last time-frame
-    uint nPo = Abc_NtkCoNum(pNtk) / nTimeFrame;
-    pNtkStr = aigUtils::aigCone(pNtk, Abc_NtkCoNum(pNtk)-nPo, Abc_NtkCoNum(pNtk), true);
+    if(onlyLast) {
+        // retrieve the outputs from the last time-frame
+        uint nPo = Abc_NtkCoNum(pNtk) / nTimeFrame;
+        pNtkStr = aigUtils::aigCone(pNtk, Abc_NtkCoNum(pNtk)-nPo, Abc_NtkCoNum(pNtk), true);
+    } else pNtkStr = pNtk;
 
     // permute PIs
     if(!perm) return pNtkStr;
@@ -82,13 +84,13 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, int *perm, cuint pid)
     return pNtk;
 }
 
-void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg)
+void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg, const bool onlyLast)
 {
     uint pid = (uint)getpid();  // name the tmp dump files with pid to avoid name collision
 
     dumpSTG(pNtk, nTimeFrame, stg, pid);
     dumpBLIF(pid);
-    Abc_Ntk_t *pNtkCheck = prepNtkToCheck(nTimeFrame, perm, pid);
+    Abc_Ntk_t *pNtkCheck = prepNtkToCheck(nTimeFrame, perm, pid, onlyLast);
     
     //cout << "prep done, start checking..." << endl;
     //if(perm) for(uint i=0; i<Abc_NtkCiNum(pNtk); ++i)
