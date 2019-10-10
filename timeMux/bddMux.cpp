@@ -314,7 +314,7 @@ int buildAigHyper(Abc_Ntk_t *&pNtk, cuint optRnd = 3)
     return Abc_NtkCo(pNtk, nCo)->Id;
 }
 
-STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt)
+STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbose, const char *logFileName, const Cudd_ReorderingType rt)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
@@ -438,7 +438,7 @@ STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, 
 
         stsSum += st__count(csts);
         
-        if(verbosity) cout << "@t=" << i << ":" << setw(7) << st__count(csts) << " states, ";
+        if(verbose) cout << "@t=" << i << ":" << setw(7) << st__count(csts) << " states, ";
 
         buildTrans(dd, pNodeVec, B, nVar, nCo, nTimeFrame, i, csts, nsts, stg);
         if(logger) logger->log("trans-" + to_string(i));
@@ -447,7 +447,7 @@ STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, 
         bddFreeTable(dd, csts);
         csts = nsts;
         
-        if(verbosity) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
+        if(verbose) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
         if(logger) logger->log("next-" + to_string(i));
     }
     
@@ -458,7 +458,7 @@ STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, 
     bddFreeTable(dd, csts);
     bddFreeVec(dd, pNodeVec, nCo);
     
-    if(verbosity) {
+    if(verbose) {
         cout << "remaining BDD nodes: " << Cudd_ReadNodeCount(dd) << endl;
         cout << "--------------------------------------------------" << endl;
     }

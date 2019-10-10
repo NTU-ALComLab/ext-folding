@@ -9,7 +9,6 @@ namespace toComb
 int ToComb_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
-    //bool verbosity = false;
     int num = 1;
     Abc_Ntk_t *pNtk;
 
@@ -17,9 +16,6 @@ int ToComb_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "h")) != EOF) {
         switch(c) {
-        //case 'v':
-        //    verbosity = !verbosity;
-        //    break;
         case 'h': default:
             goto usage;
         }
@@ -49,7 +45,6 @@ usage:
     Abc_Print(-2, "usage: to_comb [-h] <num>\n");
     Abc_Print(-2, "\t        transform current network into a purely combinational circuit, latches will be converted to PI/POs\n");
     Abc_Print(-2, "\t-h    : print the command usage\n");
-    //Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
     Abc_Print(-2, "\tnum   : (optional) the base of #PI being rounded up to [default = %lu]\n", num);
 
     return 1;

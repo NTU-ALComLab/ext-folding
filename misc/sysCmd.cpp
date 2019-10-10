@@ -13,13 +13,13 @@ int Sys_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     string cmd;
-    bool verbosity = true;
+    bool verbose = true;
 
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "vh")) != EOF) {
         switch(c) {
         case 'v':
-            verbosity = !verbosity;
+            verbose = !verbose;
             break;
         case 'h': default:
             goto usage;
@@ -35,7 +35,7 @@ int Sys_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         cmd += argv[globalUtilOptind];
         cmd += " ";
     }
-    if(!verbosity)
+    if(!verbose)
         cmd += " > /dev/null";
 
     system(cmd.c_str());
@@ -43,11 +43,11 @@ int Sys_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: sys [-v] <cmd>\n");
+    Abc_Print(-2, "usage: sys [-vh] <cmd>\n");
     Abc_Print(-2, "\t        execute system command\n");
-    Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
-    Abc_Print(-2, "\tcmd    : command to be executed\n");
+    Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h    : print the command usage\n");
+    Abc_Print(-2, "\tcmd    : command to be executed\n");
     return 1;
 }
 

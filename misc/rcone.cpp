@@ -8,7 +8,6 @@ namespace rcone
 int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
-    //bool verbosity = false;
     int st = -1, ed = -1, nPo;
     Abc_Ntk_t *pNtk;
 
@@ -16,9 +15,6 @@ int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     Extra_UtilGetoptReset();
     while((c=Extra_UtilGetopt(argc, argv, "h")) != EOF) {
         switch(c) {
-        //case 'v':
-        //    verbosity = !verbosity;
-        //    break;
         case 'h': default:
             goto usage;
         }
@@ -57,12 +53,11 @@ int RCone_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: rcone <start> <end>\n");
+    Abc_Print(-2, "usage: rcone [-h] <start> <end>\n");
     Abc_Print(-2, "\t        replaces the current network by logic cone of POs from indices [start, end)\n");
-    //Abc_Print(-2, "\t-v    : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
+    Abc_Print(-2, "\t-h    : print the command usage\n");
     Abc_Print(-2, "\tstart : the PO index to start with (inclusive)\n");
     Abc_Print(-2, "\tend   : (optional) the PO index to end with (exclusive), if not specified, it will be set to start+1 as default\n");
-    Abc_Print(-2, "\t-h    : print the command usage\n");
     return 1;
 }
 

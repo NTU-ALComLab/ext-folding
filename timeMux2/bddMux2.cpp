@@ -7,7 +7,7 @@ using namespace bddUtils;
 namespace timeMux2
 {
 
-STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbosity, const char *logFileName)
+STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPerm, const bool verbose, const char *logFileName)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
     
@@ -23,7 +23,7 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
     cuint nCi = Abc_NtkCiNum(pNtk);
     cuint nCo = Abc_NtkCoNum(pNtk);
     cuint nPi = nCi / nTimeFrame;
-    nPo = reordIO(pNtk, dd, nTimeFrame, iPerm, oPerm, logger, verbosity);
+    nPo = reordIO(pNtk, dd, nTimeFrame, iPerm, oPerm, logger, verbose);
 
     // init STG
     STG *stg = new STG(nCi, nCo, nPi, nPo, nTimeFrame);
@@ -93,7 +93,7 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
         else csts = bddCreateDummyState(dd);  // i==0
 
         stsSum += st__count(csts);
-        if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
+        if(verbose) cout << setw(7) << st__count(csts) << " states: ";
 
         timeFold::buildTrans(dd, nodeVec, B, nPi, nPo, nTimeFrame, i, csts, nsts, stg);
 
@@ -101,7 +101,7 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
         bddFreeTable(dd, nsts);
         nsts = csts;
         
-        if(verbosity)
+        if(verbose)
             cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
     }
 
@@ -112,7 +112,7 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
     bddFreeTable(dd, nsts);
     bddFreeVec(dd, nodeVec, nPo*nTimeFrame);
     
-    if(verbosity) {
+    if(verbose) {
         cout << "remaining BDD nodes: " << Cudd_ReadNodeCount(dd) << endl;
         cout << "--------------------------------------------------" << endl;
     }

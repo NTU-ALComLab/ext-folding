@@ -10,7 +10,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk;
-    bool mode = false, verbosity = true, cec = false;
+    bool mode = false, verbose = true, cec = false;
     char *logFileName = NULL;
     STG *stg;
     ostream *fp;
@@ -43,7 +43,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             cec = !cec;
             break;
         case 'v':
-            verbosity = !verbosity;
+            verbose = !verbose;
             break;
         case 'h': default:
             goto usage;
@@ -67,9 +67,9 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     assert(nCo == nPo * nTimeFrame);
 
-    if(!mode) stg = bddFold(pNtk, nTimeFrame, verbosity, logFileName);
+    if(!mode) stg = bddFold(pNtk, nTimeFrame, verbose, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
-    //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbosity);
+    //else nSts = aigUtils::aigFold(pNtk, nTimeFrame, stg, verbose);
     
     if(stg) {
         stg->write(*fp);  //fileWrite::writeKiss(nPi, nPo, nSts, stg, *fp);
@@ -89,7 +89,7 @@ usage:
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
-    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
+    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");
     Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;

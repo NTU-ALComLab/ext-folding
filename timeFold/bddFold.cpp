@@ -78,7 +78,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     delete [] oFuncs;
 }
 
-STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbosity, const char *logFileName)
+STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbose, const char *logFileName)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
@@ -168,7 +168,7 @@ STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbosity, const char
 
         stsSum += st__count(csts);
         
-        if(verbosity) cout << setw(7) << st__count(csts) << " states: ";
+        if(verbose) cout << setw(7) << st__count(csts) << " states: ";
 
         buildTrans(dd, pNodeVec, B, nVar, nPo, nTimeFrame, i, csts, nsts, stg);
         if(logger) logger->log("trans-" + to_string(i));
@@ -176,7 +176,7 @@ STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbosity, const char
         // replace nsts with csts, and enter next iteration
         bddFreeTable(dd, nsts);
         nsts = csts;
-        if(verbosity) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
+        if(verbose) cout << Cudd_ReadNodeCount(dd) << " nodes" << endl;
         if(logger) logger->log("next-" + to_string(i));
     }
     
@@ -187,7 +187,7 @@ STG* bddFold(Abc_Ntk_t *pNtk, cuint nTimeFrame, const bool verbosity, const char
     bddFreeTable(dd, nsts);
     bddFreeVec(dd, pNodeVec, nCo);
     
-    if(verbosity) {
+    if(verbose) {
         cout << "remaining BDD nodes: " << Cudd_ReadNodeCount(dd) << endl;
         cout << "--------------------------------------------------" << endl;
     }

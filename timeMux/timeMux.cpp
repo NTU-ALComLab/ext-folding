@@ -52,7 +52,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk;
-    bool mode = false, cec = false, verbosity = true;
+    bool mode = false, cec = false, verbose = true;
     char *logFileName = NULL;
     int *perm = NULL;
 
@@ -88,7 +88,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             cec = !cec;
             break;
         case 'v':
-            verbosity = !verbosity;
+            verbose = !verbose;
             break;
         case 'h': default:
             goto usage;
@@ -115,9 +115,9 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
     if(perm) perm = new int[nCi];
 
-    if(!mode) stg = bddMux(pNtk, nTimeFrame, perm, verbosity, logFileName);
+    if(!mode) stg = bddMux(pNtk, nTimeFrame, perm, verbose, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
-    //else nSts = aigFold(pNtk, nTimeFrame, stg, verbosity);
+    //else nSts = aigFold(pNtk, nTimeFrame, stg, verbose);
     
     if(stg) {
         stg->write(*fp, perm);
@@ -142,7 +142,7 @@ usage:
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-r         : toggles reordering of circuit inputs [default = %s]\n", perm ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
-    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
+    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");
     Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;

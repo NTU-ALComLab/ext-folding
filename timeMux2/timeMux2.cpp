@@ -9,7 +9,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk;
-    bool mode = false, cec = false, verbosity = true;
+    bool mode = false, cec = false, verbose = true;
     char *logFileName = NULL;
 
     STG *stg = NULL;
@@ -42,7 +42,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             cec = !cec;
             break;
         case 'v':
-            verbosity = !verbosity;
+            verbose = !verbose;
             break;
         case 'h': default:
             goto usage;
@@ -69,7 +69,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     iPerm = new int[nCi];
     oPerm = new int[nCo];
 
-    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbosity, logFileName);
+    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbose, logFileName);
     else cerr << "AIG mode currently not supported." << endl;
     
     if(stg) {
@@ -97,7 +97,7 @@ usage:
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
-    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbosity ? "on" : "off");
+    Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");
     Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;

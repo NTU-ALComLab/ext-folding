@@ -5,3 +5,4 @@ SRC += \
     src/ext-folding/misc/natEnc.cpp \
     src/ext-folding/misc/oneHotEnc.cpp \
     src/ext-folding/misc/kissToBlif.cpp \
+    src/ext-folding/misc/rPermIO.cpp \
