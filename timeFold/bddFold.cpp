@@ -16,7 +16,7 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
     uint cCnt = 0, nCnt = 0;
     
     DdNode **oFuncs  = new DdNode*[nPo];
-    DdNode *F, *G, *path, *bCube, *tmp1, *tmp2;
+    DdNode *F = NULL, *G, *path, *bCube, *tmp1, *tmp2;
 
     st__foreach_item(csts, cGen, (const char**)&cKNode, (char**)&cVNode) {
         // find a path to this state, store it in cube
@@ -24,27 +24,31 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
         
         // get output function of current state
         // oFunc = cofactor(f_k, cube)
+        bool validPos = false;
         bCube = Cudd_CubeArrayToBdd(dd, cube);  Cudd_Ref(bCube);  // bdd of the cube
         for(uint k=0; k<nPo; ++k) {
             if(pNodeVec[i*nPo+k]) {
                 oFuncs[k] = Cudd_Cofactor(dd, pNodeVec[i*nPo+k], bCube);
                 Cudd_Ref(oFuncs[k]);
+                if(!validPos) validPos = true;
             } else oFuncs[k] = NULL;
         }
         
         Cudd_GenFree(gen);
 
         // encode output on/off-sets
-        F = b0;  Cudd_Ref(F);
-        for(uint k=0; k<2; ++k) {
-            bddNotVec(oFuncs, nPo);   // 2*negation overall
-            tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
-            tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
-            
-            Cudd_RecursiveDeref(dd, F);
-            Cudd_RecursiveDeref(dd, tmp1);
-            F = tmp2;
-        }
+        if(validPos) {
+            F = b0;  Cudd_Ref(F);
+            for(uint k=0; k<2; ++k) {
+                bddNotVec(oFuncs, nPo);   // 2*negation overall
+                tmp1 = bddDot(dd, oFuncs, B+k*nPo, nPo);
+                tmp2 = Cudd_bddOr(dd, F, tmp1);  Cudd_Ref(tmp2);
+                
+                Cudd_RecursiveDeref(dd, F);
+                Cudd_RecursiveDeref(dd, tmp1);
+                F = tmp2;
+            }
+        } else { F = b1;  Cudd_Ref(F); }
 
         
         nCnt = 0;
@@ -58,11 +62,10 @@ void buildTrans(DdManager *dd, DdNode **pNodeVec, DdNode **B, cuint nPi, cuint n
 
                 // ANDing transition constraint
                 G = Cudd_bddAnd(dd, F, path);  Cudd_Ref(G);
-
+                
                 // add transition (cst->nst) to STG
                 stg->addOneTrans(dd, G, oFuncs, i, cCnt, nCnt);  // G is deref by addOneTrans()
                 //fileWrite::addOneTrans(dd, G, oFuncs, nPi, nPo, nTimeFrame, i, cCnt, nCnt, stg);  // deprecated
-
             }
 
             Cudd_RecursiveDeref(dd, path);
