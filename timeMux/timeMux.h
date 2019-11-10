@@ -9,7 +9,7 @@ namespace timeMux
 {
 
 // bddMux.cpp
-STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbosity, const char *logFileName, const Cudd_ReorderingType rt = CUDD_REORDER_SYMM_SIFT);
+STG* bddMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *perm, const bool verbose, const char *logFileName, const Cudd_ReorderingType rt = CUDD_REORDER_SYMM_SIFT);
 
 // checkEqv.cpp
 void checkEqv(Abc_Ntk_t *pNtk, int *perm, cuint nTimeFrame, STG *stg, const bool onlyLast);

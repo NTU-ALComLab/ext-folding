@@ -1,26 +1,22 @@
-#include "ext-folding/timeMux2/timeMux2.h"
+#include "ext-folding/timeMux3/timeMux3.h"
 
-using namespace timeMux2;
+using namespace timeMux3;
 
-namespace timeMux2
+namespace timeMux3
 {
 
-int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
+int tMux3_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
-    Abc_Ntk_t *pNtk;
-    bool mode = false, cec = false, verbose = true;
-    char *logFileName = NULL;
+    Abc_Ntk_t *pNtk, *pNtkRes;
+    bool cec = false, verbose = true;
+    char *logFileName = NULL, *outFileName = NULL;
 
-    STG *stg = NULL;
-    ostream *fp;
     int nTimeFrame = -1;
-    int expConfig = 0; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none
-    int *iPerm, *oPerm;
-    uint nCi, nPi, nCo, nPo;
+    uint nCi, nPi, nCo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlemcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlocvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -37,16 +33,12 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             }
             logFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
             break;
-        case 'e':
+        case 'o':
             if(globalUtilOptind >= argc) {
-                Abc_Print(-1, "Command line switch \"-e\" should be followed by an integer.\n");
+                Abc_Print(-1, "Command line switch \"-o\" should be followed by a string.\n");
                 goto usage;
             }
-            expConfig = atoi(argv[globalUtilOptind++]);
-            if((expConfig < 0) || (expConfig > 3)) goto usage;
-            break;
-        case 'm':
-            mode = !mode;
+            outFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
             break;
         case 'c':
             cec = !cec;
@@ -59,8 +51,6 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         }
     }
     
-    fp = (globalUtilOptind < argc) ? (new ofstream(argv[globalUtilOptind])) : &cout;
-    
     // get pNtk
     pNtk = Abc_FrameReadNtk(pAbc);
     if(pNtk == NULL) {
@@ -69,54 +59,43 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     }
     pNtk = aigUtils::aigToComb(pNtk, nTimeFrame);
 
+
     nCo = Abc_NtkCoNum(pNtk);     // #output
     nCi = Abc_NtkCiNum(pNtk);     // #input
     nPi = nCi / nTimeFrame;       // #Pi of the sequential circuit
     assert(nCi == nPi * nTimeFrame);
-    
-    // init i/o-Perm
-    iPerm = new int[nCi];
-    oPerm = new int[nCo];
 
-    if(!mode) stg = bddMux2(pNtk, nTimeFrame, nPo, iPerm, oPerm, verbose, logFileName, expConfig);
-    else cerr << "AIG mode currently not supported." << endl;
+    pNtkRes = aigStrMux(pNtk, nTimeFrame, verbose, logFileName);
     
-    if(stg) {
-        stg->write(*fp, iPerm, oPerm);
-        // fileWrite is deprecated
-        //fileWrite::writePerm(iPerm, nCi, *fp);
-        //fileWrite::writePerm(oPerm, nCo, *fp, false);
-        //fileWrite::writeKiss(nPi, nPo*nTimeFrame, nSts, stg, *fp);
-        if(cec) checkEqv(pNtk, iPerm, oPerm, nTimeFrame, stg); 
+    if(pNtk) {
+        if(outFileName) ; // write file
+        if(cec) ; //checkEqv(pNtk, pNtkRes, nTimeFrame, true); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
+
     
-    if(fp != &cout) delete fp;
     if(logFileName) ABC_FREE(logFileName);
+    if(outFileName) ABC_FREE(outFileName);
     Abc_NtkDelete(pNtk);
-    delete [] iPerm;
-    delete [] oPerm;
-    if(stg) delete stg;
+    Abc_FrameReplaceCurrentNetwork(pAbc, pNtkRes);
 
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-e <config>] [-mcvh] <kiss_file>\n");
-    Abc_Print(-2, "\t             time multiplexing with PO pin sharing\n");
+    Abc_Print(-2, "usage: time_mux3 [-t <num>] [-l <log_file>] [-o <out_file>] [-cvh]\n");
+    Abc_Print(-2, "\t             time multiplexing with structural approach\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
-    Abc_Print(-2, "\t-e         : (optional) toggles experiment configuration (0, 1, 2, 3) [default = %d]\n", expConfig);
-    Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
+    Abc_Print(-2, "\t-o         : (optional) toggles whether to write the circuit into the specified file [default = %s]\n", outFileName ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");
-    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
     return 1;
 }
 
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux2", tMux2_Command, 0);
+    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux3", tMux3_Command, 0);
 }
 
 // called during ABC termination
@@ -135,6 +114,6 @@ struct registrar
     {
         Abc_FrameAddInitializer(&frame_initializer);
     }
-} timeMux2_registrar;
+} timeMux3_registrar;
 
-} // end namespace timeMux2
+} // end namespace timeMux3

@@ -26,8 +26,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             nTimeFrame = atoi(argv[globalUtilOptind++]);
-            if(nTimeFrame < 0)
-                goto usage;
+            if(nTimeFrame <= 0) goto usage;
             break;
         case 'l':
             if(globalUtilOptind >= argc) {

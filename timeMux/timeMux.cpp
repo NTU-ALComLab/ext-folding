@@ -70,6 +70,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             nTimeFrame = atoi(argv[globalUtilOptind++]);
+            if(nTimeFrame <= 0) goto usage;
             break;
         case 'l':
             if(globalUtilOptind >= argc) {
@@ -95,7 +96,6 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         }
     }
     
-    if(nTimeFrame < 0) goto usage;
     fp = (globalUtilOptind < argc) ? (new ofstream(argv[globalUtilOptind])) : &cout;
     
     // get pNtk

@@ -418,5 +418,56 @@ Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
     return pNtkRes;
 }
 
+// create a new latch
+Abc_Obj_t* aigNewLatch(Abc_Ntk_t *pNtk, cuint initVal, char *latchName, char *inName, char *outName)
+{
+    Abc_Obj_t *pLatch, *pLatchInput, *pLatchOutput;
+    pLatch = Abc_NtkCreateLatch(pNtk);
+    pLatchInput = Abc_NtkCreateBi(pNtk);
+    pLatchOutput = Abc_NtkCreateBo(pNtk);
+    Abc_ObjAddFanin(pLatch, pLatchInput);
+    Abc_ObjAddFanin(pLatchOutput, pLatch);
+
+    char buf[100];
+    int idx = Abc_NtkLatchNum(pNtk) - 1;
+    if(!latchName) sprintf(buf, "lat%d", idx);
+    Abc_ObjAssignName(pLatch, latchName ? latchName : buf, NULL);
+    if(!inName) sprintf(buf, "lin%d", idx);
+    Abc_ObjAssignName(pLatchInput, inName ? inName : buf, NULL );
+    if(!outName) sprintf(buf, "lout%d", idx);
+    Abc_ObjAssignName(pLatchOutput, outName ? outName : buf, NULL );
+
+    switch(initVal) {
+    case 0:
+        Abc_LatchSetInit0(pLatch);
+        break;
+    case 1:
+        Abc_LatchSetInit1(pLatch);
+        break;
+    default:
+        Abc_LatchSetInitDc(pLatch);
+        break;
+    }
+
+    return pLatch;
+}
+
+Abc_Ntk_t* aigInitNtk(cuint nPi, cuint nPo, cuint nLatch, const char *name)
+{
+    Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtk->pName = Extra_UtilStrsav(name ? name : "newAIG");
+
+    for(uint i=0; i<nPi; ++i) Abc_NtkCreatePi(pNtk);
+    for(uint i=0; i<nPo; ++i) Abc_NtkCreatePo(pNtk);
+    for(uint i=0; i<nPi; ++i) aigNewLatch(pNtk, 0);
+
+    Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtk);
+    Abc_NtkAddDummyBoxNames(pNtk);
+
+    assert(Abc_NtkCheck(pNtk));
+    return pNtk;
+}
+
 } // end namespace utils::aigUtils
 
