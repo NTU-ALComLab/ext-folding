@@ -80,7 +80,7 @@ Abc_Ntk_t* aigSingleCone(Abc_Ntk_t *pNtk, cuint n, bool rm)
     return pNtkRes;
 }
 
-// permutates the order of PIs with the given "perm"
+// permutates the order of CIs with the given "perm"
 Abc_Ntk_t* aigPermCi(Abc_Ntk_t *pNtk, int *perm, bool rm)
 {
     assert(Abc_NtkIsStrash(pNtk));
@@ -115,7 +115,7 @@ Abc_Ntk_t* aigPermCi(Abc_Ntk_t *pNtk, int *perm, bool rm)
     return pNtkPerm;
 }
 
-// permutates the order of PIs with the given "perm"
+// permutates the order of COs with the given "perm"
 // in-place permutation, no new AIG will be created
 void aigPermCo(Abc_Ntk_t *pNtk, int *perm)
 {

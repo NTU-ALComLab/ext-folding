@@ -37,7 +37,7 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, cuint nCo, int *iPerm, int *o
     // permute POs
     aigUtils::aigPermCo(pNtkStr, oPerm);
 
-    // retrieve the outputs from the last time-frame
+    // retrieve the outputs
     pNtk = aigUtils::aigCone(pNtkStr, 0, nCo, true);
 
     return pNtk;
