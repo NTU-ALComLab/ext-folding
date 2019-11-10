@@ -428,14 +428,9 @@ Abc_Obj_t* aigNewLatch(Abc_Ntk_t *pNtk, cuint initVal, char *latchName, char *in
     Abc_ObjAddFanin(pLatch, pLatchInput);
     Abc_ObjAddFanin(pLatchOutput, pLatch);
 
-    char buf[100];
-    int idx = Abc_NtkLatchNum(pNtk) - 1;
-    if(!latchName) sprintf(buf, "lat%d", idx);
-    Abc_ObjAssignName(pLatch, latchName ? latchName : buf, NULL);
-    if(!inName) sprintf(buf, "lin%d", idx);
-    Abc_ObjAssignName(pLatchInput, inName ? inName : buf, NULL );
-    if(!outName) sprintf(buf, "lout%d", idx);
-    Abc_ObjAssignName(pLatchOutput, outName ? outName : buf, NULL );
+    if(latchName) Abc_ObjAssignName(pLatch, latchName, NULL);
+    if(inName) Abc_ObjAssignName(pLatchInput, inName, NULL );
+    if(outName) Abc_ObjAssignName(pLatchOutput, outName, NULL );
 
     switch(initVal) {
     case 0:
@@ -459,13 +454,13 @@ Abc_Ntk_t* aigInitNtk(cuint nPi, cuint nPo, cuint nLatch, const char *name)
 
     for(uint i=0; i<nPi; ++i) Abc_NtkCreatePi(pNtk);
     for(uint i=0; i<nPo; ++i) Abc_NtkCreatePo(pNtk);
-    for(uint i=0; i<nPi; ++i) aigNewLatch(pNtk, 0);
+    for(uint i=0; i<nLatch; ++i) aigNewLatch(pNtk, 0);
 
     Abc_NtkAddDummyPiNames(pNtk);
     Abc_NtkAddDummyPoNames(pNtk);
     Abc_NtkAddDummyBoxNames(pNtk);
 
-    assert(Abc_NtkCheck(pNtk));
+    //assert(Abc_NtkCheck(pNtk));  // will fail, since no fanin for POs
     return pNtk;
 }
 

@@ -68,8 +68,8 @@ int tMux3_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     pNtkRes = aigStrMux(pNtk, nTimeFrame, verbose, logFileName);
     
     if(pNtk) {
-        if(outFileName) ; // write file
-        if(cec) ; //checkEqv(pNtk, pNtkRes, nTimeFrame, true); 
+        if(outFileName) Io_Write(pNtkRes, outFileName, IO_FILE_BLIF); // write file
+        if(cec) checkEqv(pNtk, pNtkRes, nTimeFrame); 
     } else cerr << "Something went wrong in time_mux!!" << endl;
 
     
