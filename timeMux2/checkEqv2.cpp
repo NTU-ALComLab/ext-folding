@@ -43,7 +43,7 @@ static Abc_Ntk_t* prepNtkToCheck(cuint nTimeFrame, cuint nCo, int *iPerm, int *o
     return pNtk;
 }
 
-static int* extendPerm(int *perm, cuint fromSize, cuint toSize)
+int* extendPerm(int *perm, cuint fromSize, cuint toSize)
 {
     assert(perm && (fromSize <= toSize));
     vector<bool> v(toSize, false);

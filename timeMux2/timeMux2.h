@@ -17,6 +17,7 @@ bool checkPerm(int *perm, cuint size, cuint cap);
 
 // checkEqv.cpp
 void checkEqv(Abc_Ntk_t *pNtk, int *iPerm, int *oPerm, cuint nTimeFrame, STG *stg);
+int* extendPerm(int *perm, cuint fromSize, cuint toSize);
 
 } // end namespace timeMux2
 

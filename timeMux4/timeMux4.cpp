@@ -67,11 +67,11 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     assert(nCi == nPi * nTimeFrame);
 
     oPerm = new int[nCo];
-    pNtkRes = aigStrMux(pNtk, nTimeFrame, verbose, logFileName);
+    pNtkRes = aigStrMux(pNtk, nTimeFrame, oPerm, verbose, logFileName);
     
     if(pNtk) {
         if(outFileName) Io_Write(pNtkRes, outFileName, IO_FILE_BLIF); // write file
-        //if(cec) checkEqv(pNtk, pNtkRes, nTimeFrame); 
+        if(cec) checkEqv(pNtk, pNtkRes, oPerm, nTimeFrame); 
     } else cerr << "Something went wrong in time_mux4!!" << endl;
 
     

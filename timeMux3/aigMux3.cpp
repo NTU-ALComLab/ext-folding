@@ -28,7 +28,7 @@ void buildLatchTransWithTime(Abc_Ntk_t *pNtk, cuint nTimeFrame, TimeLogger *logg
     if(logger) logger->log("buildLatchTransWithTime");
 }
 
-void buildPiStorage(Abc_Ntk_t *pNtk, cuint nPi, cuint nTimeFrame, TimeLogger *logger)
+static void buildPiStorage(Abc_Ntk_t *pNtk, cuint nPi, cuint nTimeFrame, TimeLogger *logger)
 {
     for(uint t=0; t<nTimeFrame-1; ++t) {
         Abc_Obj_t *pCtrl = Abc_ObjFanout0(Abc_NtkBox(pNtk, t));
@@ -48,7 +48,7 @@ void buildPiStorage(Abc_Ntk_t *pNtk, cuint nPi, cuint nTimeFrame, TimeLogger *lo
     if(logger) logger->log("buildPiStorage");
 }
 
-void buildPoFuncs(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, cuint nTimeFrame, cuint nPi, cuint nPo, TimeLogger *logger)
+static void buildPoFuncs(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, cuint nTimeFrame, cuint nPi, cuint nPo, TimeLogger *logger)
 {
     assert(Abc_NtkPoNum(pNtkComb) == Abc_NtkPoNum(pNtkMux));
     Abc_Obj_t *pObj;  uint i;
@@ -62,11 +62,11 @@ void buildPoFuncs(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, cuint nTimeFrame, cui
     Abc_AigForEachAnd(pNtkComb, pObj, i)
         pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
+    Abc_Obj_t *pConst0 = Abc_ObjNot(Abc_AigConst1(pNtkMux));
+    Abc_Obj_t *pCtrl = Abc_ObjFanout0(Abc_NtkBox(pNtkMux, nTimeFrame-1));
     Abc_NtkForEachPo(pNtkMux, pObj, i) {
-        Abc_Obj_t *pPoComb, *pConst0, *pCtrl, *pPoMux;
+        Abc_Obj_t *pPoComb, *pPoMux;
         pPoComb = Abc_ObjChild0Copy(Abc_NtkPo(pNtkComb, i));
-        pConst0 = Abc_ObjNot(Abc_AigConst1(pNtkMux));
-        pCtrl = Abc_ObjFanout0(Abc_NtkBox(pNtkMux, nTimeFrame-1));
         pPoMux = Abc_AigMux((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pPoComb, pConst0);
         Abc_ObjAddFanin(pObj, pPoMux);
     }
