@@ -6,3 +6,5 @@ SRC += \
     src/ext-folding/misc/oneHotEnc.cpp \
     src/ext-folding/misc/kissToBlif.cpp \
     src/ext-folding/misc/rPermIO.cpp \
+    src/ext-folding/misc/readkiss.cpp \
+    src/ext-folding/misc/rreadkiss.cpp \

@@ -13,7 +13,7 @@ namespace kissToBlif
 
 typedef unordered_map<string, unsigned> StateMap;
 
-static void tokenize(string x, vector<string>& toks, const unsigned& size)
+void tokenize(string x, vector<string>& toks, const unsigned& size)
 {
     toks.clear();
     boost::erase_all(x, "\n");  boost::erase_all(x, "\r");
@@ -22,7 +22,7 @@ static void tokenize(string x, vector<string>& toks, const unsigned& size)
     assert(toks.size() == size);
 }
 
-static unsigned getStateIdx(const string &name, StateMap &stateMap)
+unsigned getStateIdx(const string &name, StateMap &stateMap)
 {
     if(stateMap.count(name) > 0)
         return stateMap[name];

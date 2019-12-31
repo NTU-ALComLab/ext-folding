@@ -123,24 +123,33 @@ void aigPermCo(Abc_Ntk_t *pNtk, int *perm)
 
     cuint nCo = Abc_NtkCoNum(pNtk);
     Abc_Obj_t **poVec = new Abc_Obj_t*[nCo];
+    char **nVec = new char*[nCo];
     uint i;  Abc_Obj_t *pObj;
 
     //Abc_NtkCollect
     Abc_NtkForEachCo(pNtk, pObj, i) {
         poVec[i] = Abc_ObjChild0(pObj);
+        nVec[i] = Extra_UtilStrsav(Abc_ObjName(pObj));
+        Nm_ManDeleteIdName(pObj->pNtk->pManName, pObj->Id);
         Abc_ObjRemoveFanins(pObj);
     }
     assert(i == nCo);
 
-    Abc_NtkForEachCo(pNtk, pObj, i)
+    Abc_NtkForEachCo(pNtk, pObj, i) {
         Abc_ObjAddFanin(pObj, poVec[perm[i]]);
+        Abc_ObjAssignName(pObj, nVec[i], NULL);
+    }
 
     Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
     assert(Abc_NtkCheck(pNtk));
     delete [] poVec;
+
+    for(uint i=0; i<nCo; ++i) ABC_FREE(nVec[i]);
+    delete [] nVec;
 }
 
-// concatenates the given array of circuits, each circuit should have the same #PIs
+// concatenates the given array of circuits, each circuit should have the same #CIs
+// side effects: for sequential circuit, FFs will be converted to PI/POs
 Abc_Ntk_t* aigConcat(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
 {
     int i;  char charBuf[1000];

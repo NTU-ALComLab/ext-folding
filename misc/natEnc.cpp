@@ -1,6 +1,7 @@
 // written by Yu-Zhou, Lin and Yu-Rong, Zhu
 
 #include <iostream>
+#include <cassert>
 #include <vector>
 #include <fstream>
 #include <cstring>
@@ -166,6 +167,7 @@ void natEnc(const char *inKiss, const char *outBlif, const bool dcVal)
             }
             for(int k=0;k<state_list.size();k++){//bit of next_st
                 if(state_list[k]==table[j][2]){
+                    assert((encode_list[k])[i-io_sum] == '1');
                     fout<<(encode_list[k])[i-io_sum];
                     break;
                 }

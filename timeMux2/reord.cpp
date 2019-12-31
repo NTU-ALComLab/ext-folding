@@ -1,11 +1,7 @@
 #include "ext-folding/timeMux2/timeMux2.h"
-#undef b1
+#include "ext-folding/utils/supVec.h"
 
-#include <algorithm>
-#include <boost/dynamic_bitset.hpp>
-
-typedef boost::dynamic_bitset<> SupVec;
-typedef vector<SupVec> SupVecs;
+using namespace SupVech;
 
 namespace timeMux2
 {
@@ -41,18 +37,6 @@ static void initSupVecs(Abc_Ntk_t *pNtk, DdManager *dd, SupVecs &sVecs, cuint nC
 
     if(logger) logger->log("init SupVecs");
 }
-
-// comparison function for SupVec
-class SupVecCompFunc
-{
-  public:
-    SupVecCompFunc(const SupVecs& svs): sVecs(svs) {}
-    bool operator() (cuint x, cuint y) {
-        return (sVecs[x].count() < sVecs[y].count());
-    }
-  private:
-    const SupVecs &sVecs;
-};
 
 // reorders the circuit output, returns the configuration of each time-slot
 // remember to free the returned "slots" array afterwards
@@ -330,5 +314,3 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
 }
 
 } // end namespace timeMux2
-
-#define b1 (dd)->one
