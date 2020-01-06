@@ -10,7 +10,17 @@ bool checkPerm(int *perm, cuint size, cuint cap)
 {
     SupVec sv(cap);
     for(uint i=0; i<size; ++i) {
-        if((perm[i] < 0) || (perm[i] >= cap) || sv[perm[i]]) return false;
+        if(perm[i] < 0) {
+            cout << "neg val" << endl;
+            return false;
+        } else if(perm[i] >= cap) {
+            cout << "exceed cap" << endl;
+            return false;
+        } else if(sv[perm[i]]) {
+            cout << "repeat key " << i << "->" << perm[i] << endl;
+            return false;
+        }
+        //if((perm[i] < 0) || (perm[i] >= cap) || sv[perm[i]]) return false;
         sv[perm[i]] = 1;
     }
     return true;

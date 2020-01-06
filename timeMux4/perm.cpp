@@ -1,5 +1,6 @@
 #include "ext-folding/timeMux4/timeMux4.h"
 #include "ext-folding/utils/supVec.h"
+#include "ext-folding/timeMux2/timeMux2.h"
 
 using namespace SupVech;
 
@@ -15,6 +16,7 @@ void getStructSup(Abc_Ntk_t *pNtk, cuint idx, SupVec &sv)
         sv[iPi] = 1;
         //cout << iPi << " ";
     }
+    Vec_IntFree(vInt);
     //cout << endl;
 }
 
@@ -46,10 +48,21 @@ Abc_Ntk_t* permPi(Abc_Ntk_t *pNtk, int *iPerm, const bool verbose)
         prev ^= curr;
 
         for(uint j=0; j<nPi; ++j) if(prev[j]) {
+            //cout << j << " -> " << cnt << endl;
             iPerm[j] = cnt;
             invPerm[cnt++] = j;
         }
     }
+
+    // deal with dummy inputs
+    for(uint j=0; j<nPi; ++j) if(!curr[j]) {
+        //cout << j << " -> " << cnt << endl;
+        iPerm[j] = cnt;
+        invPerm[cnt++] = j;
+    }
+
+    assert(timeMux2::checkPerm(iPerm, nPi, nPi));
+    assert(timeMux2::checkPerm(invPerm, nPi, nPi));
 
     pNtk = aigUtils::aigPermCi(pNtk, invPerm, true);
     delete [] sIdx;
