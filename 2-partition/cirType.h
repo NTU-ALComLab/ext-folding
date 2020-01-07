@@ -18,16 +18,18 @@ class CellBucket;
 class Net {
 public:
     // Constructor / Destructor
-    Net(const unsigned idx, const string& name): idx_(idx), name_(name) {}
+    Net(const string& name): name_(name) {}
+    //Net(const unsigned idx, const string& name): idx_(idx), name_(name) {}
     ~Net() {}
 
     // functions for getting values
-    const unsigned&         getIdx()     const { return idx_; }
-    const string&           getName()    const { return name_; }
-    const vector<Cell*>&    getCellList() const { return cellList_; }
-    unsigned                getGroupCnt(int id) const { return groupCnt_[id]; }
-    bool                    getFlag() const { return flag_; }
-    void                    report() const;
+    //const unsigned&         getIdx()                    const { return idx_; }
+    const string&           getName()                   const { return name_; }
+    const vector<Cell*>&    getCellList()               const { return cellList_; }
+    unsigned                getGroupCnt(int id)         const { return groupCnt_[id]; }
+    unsigned                getBestGroupCnt(int id)     const { return bestGroupCnt_[id]; }
+    bool                    getFlag()                   const { return flag_; }
+    void                    report()                    const;
 
     // functions for setting values
     void addCell(Cell* cell) { cellList_.push_back(cell); }
@@ -36,12 +38,13 @@ public:
     void incGroupCnt(int id, int inc) { groupCnt_[id] += inc; }
     void incGainForGroupSingle(int id, int inc, CellBucket** cellBucket);
     void incGainForAll(int inc, CellBucket** cellBucket);
+    void saveBest() { for(uint i=0; i<2; ++i) bestGroupCnt_[i] = groupCnt_[i]; }
 
 private:
-    unsigned        idx_;
+    //unsigned        idx_;
     string          name_;
     vector<Cell*>   cellList_;
-    unsigned        groupCnt_[2];
+    unsigned        groupCnt_[2], bestGroupCnt_[2];
     bool            flag_;
 };
 
@@ -49,17 +52,19 @@ private:
 class Cell {
 public:
     // Constructor / Destructor
-    Cell(const unsigned idx, const string& name): idx_(idx), name_(name), group_(-1), free_(true) {}
+    Cell(const string& name): name_(name), group_(-1), bestGroup_(-1), free_(true) {}
+    //Cell(const unsigned idx, const string& name): idx_(idx), name_(name), group_(-1), bestGroup_(-1), free_(true) {}
     ~Cell() {}
 
     // functions for getting values
-    const unsigned&         getIdx()     const { return idx_; }
-    const string&           getName()    const { return name_; }
-    const vector<Net*>&     getNetList() const { return netList_; }
-    int                     getGroup()   const { return group_; }
-    int                     getGain()    const { return gain_; }
-    bool                    isFree()     const { return free_; }
-    void                    report()     const;
+    //const unsigned&         getIdx()        const { return idx_; }
+    const string&           getName()       const { return name_; }
+    const vector<Net*>&     getNetList()    const { return netList_; }
+    int                     getGroup()      const { return group_; }
+    int                     getBestGroup()  const { return bestGroup_; }
+    int                     getGain()       const { return gain_; }
+    bool                    isFree()        const { return free_; }
+    void                    report()        const;
 
     // functions for setting values
     void addNet(Net* net) { netList_.push_back(net); }
@@ -67,6 +72,7 @@ public:
     void setFree(bool f) { free_ = f; }
     void initGain();
     void incGain(int inc) { gain_ += inc; }
+    void saveBest() { bestGroup_ = group_; }
 
     // functions about linked list
     void insertNext(Cell* cell);
@@ -77,10 +83,10 @@ public:
     Cell* pPrev_;
 
 private:
-    unsigned        idx_;
+    //unsigned        idx_;
     string          name_;
     vector<Net*>    netList_;
-    int             group_;
+    int             group_, bestGroup_;
     int             gain_;
     bool            free_;
 };

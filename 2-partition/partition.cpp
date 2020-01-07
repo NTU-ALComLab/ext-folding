@@ -65,7 +65,8 @@ int partition2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         Abc_Print(-1, "Empty network.\n");
         return 1;
     }
-    pNtk = Abc_NtkDup(pNtk);
+    pNtk = Abc_NtkStrash(pNtk, 0, 0, 0);
+    //pNtk = Abc_NtkDup(pNtk);
 
     prefix = (globalUtilOptind < argc) ? argv[globalUtilOptind] : pNtk->pName;
 

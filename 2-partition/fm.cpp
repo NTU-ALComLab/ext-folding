@@ -10,6 +10,10 @@
 #include <map>
 #include <set>
 
+extern "C"
+{
+Abc_Ntk_t * Abc_NtkDarCleanupAig( Abc_Ntk_t * pNtk, int fCleanupPis, int fCleanupPos, int fVerbose );
+}
 
 namespace fmPart2
 {
@@ -23,9 +27,9 @@ public:
 
 CirMgr::~CirMgr()
 {
-    for(unsigned i=0; i<netList_.size(); ++i) delete netList_[i];
+    for(uint i=0; i<netList_.size(); ++i) delete netList_[i];
     netList_.clear();
-    for(unsigned i=0; i<cellList_.size(); ++i) delete cellList_[i];
+    for(uint i=0; i<cellList_.size(); ++i) delete cellList_[i];
     cellList_.clear();
     if(cellBucket_[0]) { delete cellBucket_[0]; cellBucket_[0] = 0; }
     if(cellBucket_[1]) { delete cellBucket_[1]; cellBucket_[1] = 0; }
@@ -36,33 +40,33 @@ void CirMgr::report() const
     cout << "[Balance factor]" << endl;
     cout << balanceFactor_ << endl;
     cout << "[Net]" << endl;
-    for(unsigned i = 0; i < netList_.size(); ++i) netList_[i]->report();
+    for(uint i = 0; i < netList_.size(); ++i) netList_[i]->report();
     cout << "[Cells]" << endl;
-    for(unsigned i = 0; i < cellList_.size(); ++i) cellList_[i]->report();
+    for(uint i = 0; i < cellList_.size(); ++i) cellList_[i]->report();
 }
 
 void CirMgr::reportPartition() const
 {
     // groups
     cout << "Group 1 :";
-    for(unsigned i=0; i<cellList_.size(); ++i)
+    for(uint i=0; i<cellList_.size(); ++i)
         if(cellList_[i]->getGroup() == 0)
             cout << " " << cellList_[i]->getName();
     cout << endl;
     cout << "Group 2 :";
-    for(unsigned i=0; i<cellList_.size(); ++i)
+    for(uint i=0; i<cellList_.size(); ++i)
         if(cellList_[i]->getGroup() == 1)
             cout << " " << cellList_[i]->getName();
     cout << endl;
     // group count
     cout << "Group count:" << endl;
-    for(unsigned i=0; i<netList_.size(); ++i) {
+    for(uint i=0; i<netList_.size(); ++i) {
         Net* net = netList_[i];
         cout << net->getName() << " " << net->getGroupCnt(0) << " " << net->getGroupCnt(1) << endl;
     }
     // cell gain
     cout << "Gain:" << endl;
-    for(unsigned i=0; i<cellList_.size(); ++i) {
+    for(uint i=0; i<cellList_.size(); ++i) {
         Cell* cell = cellList_[i];
         cout << cell->getName() << " " << cell->getGain() << endl;
     }
@@ -85,18 +89,20 @@ inline void connect(Net *n, Cell *c)
 void CirMgr::readCircuit(Abc_Ntk_t *pNtk)
 {
     pNtk_ = pNtk;
-    Abc_Obj_t *pObj;  unsigned i;
+    Abc_Obj_t *pObj;  uint i;
     netList_.reserve(Abc_NtkPiNum(pNtk));
     Abc_NtkForEachPi(pNtk, pObj, i)
-        netList_.push_back(new Net(i, Abc_ObjName(pObj)));
+        netList_.push_back(new Net(Abc_ObjName(pObj)));
+        //netList_.push_back(new Net(i, Abc_ObjName(pObj)));
     
     cellList_.reserve(Abc_NtkPoNum(pNtk));
     Abc_NtkForEachPo(pNtk, pObj, i) {
-        Cell *cell = new Cell(i, Abc_ObjName(pObj));
+        Cell *cell = new Cell(Abc_ObjName(pObj));
+        //Cell *cell = new Cell(i, Abc_ObjName(pObj));
         cellList_.push_back(cell);
         
         Vec_Int_t *vInt = Abc_NtkNodeSupportInt(pNtk, i);
-        unsigned j, jPi;
+        uint j, jPi;
         Vec_IntForEachEntry(vInt, jPi, j) {
             assert(jPi < netList_.size());
             connect(netList_[jPi], cell);
@@ -113,7 +119,7 @@ void CirMgr::readCircuit(Abc_Ntk_t *pNtk)
     */
 
     // set other parameters
-    const unsigned maxPin = getMaxPin();
+    cuint maxPin = getMaxPin();
     cellBucket_[0] = new CellBucket(maxPin);
     cellBucket_[1] = new CellBucket(maxPin);
 
@@ -121,6 +127,7 @@ void CirMgr::readCircuit(Abc_Ntk_t *pNtk)
     size_[1] = cellList_.size() - size_[0];
 }
 
+/*
 Abc_Ntk_t* CirMgr::prepNtk0() const
 {
     char buf[100]; uint i;
@@ -153,8 +160,9 @@ Abc_Ntk_t* CirMgr::prepNtk0() const
 
     return pNtkNew;
 }
+*/
 
-Abc_Ntk_t* CirMgr::prepNtk1() const
+Abc_Ntk_t* CirMgr::prepNtk(cuint gid) const
 {
     char buf[100]; uint i;
     Abc_Obj_t *pObj, *pObjNew;  
@@ -172,13 +180,13 @@ Abc_Ntk_t* CirMgr::prepNtk1() const
     }
 
     Abc_AigForEachAnd(pNtk_, pObj, i)
-        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtk_->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
 
-    for(i=0; i<cellList_.size(); ++i) if(cellList_[i]->getGroup() == 0) {
+    for(i=0; i<cellList_.size(); ++i) if(cellList_[i]->getBestGroup() == gid) {
         pObj = Abc_NtkPo(pNtk_, i);
         pObjNew = Abc_NtkCreatePo(pNtkNew);
         Abc_ObjAddFanin(pObjNew, Abc_ObjChild0Copy(pObj));
-        Abc_ObjAssignName(pObj, Abc_ObjName(pObj), NULL);
+        Abc_ObjAssignName(pObjNew, Abc_ObjName(pObj), NULL);
     }
 
     Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
@@ -187,16 +195,58 @@ Abc_Ntk_t* CirMgr::prepNtk1() const
     return pNtkNew;
 }
 
+inline vector<uint> rename(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2)
+{
+    vector<uint> ret;  ret.reserve(Abc_NtkPiNum(pNtk2));
+    uint i, cnt = 0;
+    Abc_Obj_t *pObj1, *pObj2;
+    Abc_NtkForEachPi(pNtk1, pObj1, i) if(Abc_ObjFanoutNum(pObj1) > 0) {
+        ret.push_back(i);
+        pObj2 = Abc_NtkPi(pNtk2, cnt++);
+        Nm_ManDeleteIdName(pNtk2->pManName, pObj2->Id);
+        Abc_ObjAssignName(pObj2, Abc_ObjName(pObj1), NULL);
+    }
+
+    assert(Abc_NtkPiNum(pNtk2) == cnt);
+    return ret;
+}
+
 void CirMgr::writeSolution(const char* prefix) const
 {
-    Abc_Ntk_t *pNtk0 = prepNtk0();
-    Abc_Ntk_t *pNtk1 = prepNtk0();
+    Abc_Ntk_t *pNtk0 = prepNtk(0);
+    Abc_Ntk_t *_pNtk0 = Abc_NtkDarCleanupAig(pNtk0, 1, 0, 0);
+    vector<uint> kids = rename(pNtk0, _pNtk0);
+
+    Abc_Ntk_t *pNtk1 = prepNtk(1);
+
+    /*
+    uint i, cnt = 0, cnt2 = 0;
+    Abc_Obj_t *pObj;
+    for(i=0; i<netList_.size(); ++i) if(netList_[i]->getBestGroupCnt(0) > 0) cnt++;
+    Abc_NtkForEachPi(pNtk0, pObj, i) if(Abc_ObjFanoutNum(pObj) > 0) cnt2++;
+    cout << cnt << " / " << cnt2 << " / " << Abc_NtkPiNum(_pNtk0);
+    */
 
     char buf[100];
     sprintf(buf, "%s-p0.blif", prefix);
-    Io_Write(pNtk0, buf, IO_FILE_BLIF);
+    Io_Write(_pNtk0, buf, IO_FILE_BLIF);
     sprintf(buf, "%s-p1.blif", prefix);
     Io_Write(pNtk1, buf, IO_FILE_BLIF);
+
+    sprintf(buf, "%s-part.info", prefix);
+    ofstream fp(buf);
+    for(uint j=0; j<2; ++j) {
+        fp << "p" << j << ":";
+        for(uint i=0; i<cellList_.size(); ++i) if(cellList_[i]->getBestGroup() == j) fp << " " << i;
+        fp << "\n";
+    }
+    fp << "p0i:";
+    for(cuint& i: kids) fp << " " << i;
+    fp << "\n";
+
+    Abc_NtkDelete(pNtk0);
+    Abc_NtkDelete(_pNtk0);
+    Abc_NtkDelete(pNtk1);
 }
 
 
@@ -204,12 +254,12 @@ void CirMgr::writeSolution(const char* prefix) const
 void CirMgr::partition()
 {
     clock_t st = clock(), ed;
-    unsigned fail = 0;
+    uint fail = 0;
     // initialize
     genInitialPartition();
     initByCurrentPartition();
     saveSolution();
-    for(unsigned iteration=1; iteration<=maxIteration_; ++iteration) {
+    for(uint iteration=1; iteration<=maxIteration_; ++iteration) {
         if(!FM_partition()) {
             // do not become better, random switch and increment fail counter
             randomSwap();
@@ -267,11 +317,11 @@ bool CirMgr::FM_partition()
 }
 
 // Get maximum pin number
-unsigned CirMgr::getMaxPin() const
+uint CirMgr::getMaxPin() const
 {
-    unsigned maxPin = 0;
-    for(unsigned i=0; i<cellList_.size(); ++i) {
-        unsigned nPin = cellList_[i]->getNetList().size();
+    uint maxPin = 0;
+    for(uint i=0; i<cellList_.size(); ++i) {
+        uint nPin = cellList_[i]->getNetList().size();
         maxPin = max(maxPin, nPin);
     }
     return maxPin;
@@ -280,17 +330,17 @@ unsigned CirMgr::getMaxPin() const
 // Generate initial partition
 void CirMgr::genInitialPartition()
 {
-    const unsigned n = cellList_.size();
+    cuint n = cellList_.size();
     priority_queue<Net*, vector<Net*>, CmpNet> heap;
     groupSize_[0] = groupSize_[1] = 0;
-    for(unsigned i=0; i<n; ++i)
+    for(uint i=0; i<n; ++i)
         cellList_[i]->setGroup(-1);
-    for(unsigned i=0; i<netList_.size(); ++i) {
+    for(uint i=0; i<netList_.size(); ++i) {
         netList_[i]->setFlag(false);
         heap.push(netList_[i]);
     }
-    //for(unsigned i=0; (i<n) && (groupSize_[0]<n/2); ++i) {
-    for(unsigned i=0; (i<n) && (groupSize_[0]<size_[0]); ++i) {
+    //for(uint i=0; (i<n) && (groupSize_[0]<n/2); ++i) {
+    for(uint i=0; (i<n) && (groupSize_[0]<size_[0]); ++i) {
         if(netList_[i]->getFlag()) continue;
         while(!heap.empty()) heap.pop();
         heap.push(netList_[i]);
@@ -301,14 +351,14 @@ void CirMgr::genInitialPartition()
             heap.pop();
             assert(net->getFlag());
             const vector<Cell*>& cList = net->getCellList();
-            //for(unsigned j=0; (j<cList.size()) && (groupSize_[0]<n/2); ++j) {
-            for(unsigned j=0; (j<cList.size()) && (groupSize_[0]<size_[0]); ++j) {
+            //for(uint j=0; (j<cList.size()) && (groupSize_[0]<n/2); ++j) {
+            for(uint j=0; (j<cList.size()) && (groupSize_[0]<size_[0]); ++j) {
                 Cell* cell = cList[j];
                 if(cell->getGroup() != -1) continue;
                 cell->setGroup(0);
                 groupSize_[0] += 1;
                 const vector<Net*>& nList = cell->getNetList();
-                for(unsigned k=0; k<nList.size(); ++k) {
+                for(uint k=0; k<nList.size(); ++k) {
                     if(!nList[k]->getFlag()) {
                         nList[k]->setFlag(true);
                         heap.push(nList[k]);
@@ -319,7 +369,7 @@ void CirMgr::genInitialPartition()
     }
     //assert(groupSize_[0] == n/2);
     assert(groupSize_[0] == size_[0]);
-    for(unsigned i=0; i<cellList_.size(); ++i) {
+    for(uint i=0; i<cellList_.size(); ++i) {
         if(cellList_[i]->getGroup() == -1) {
             cellList_[i]->setGroup(1);
             groupSize_[1] += 1;
@@ -331,21 +381,27 @@ void CirMgr::genInitialPartition()
 void CirMgr::saveSolution()
 {
     globalBestCost_ = cost_;
+    for(uint i=0; i<cellList_.size(); ++i)
+        cellList_[i]->saveBest();
+    for(uint i=0; i<netList_.size(); ++i)
+        netList_[i]->saveBest();
+    /*
     globalBestGroup_[0].clear();
     globalBestGroup_[1].clear();
-    for(unsigned i=0; i<cellList_.size(); ++i) {
+    for(uint i=0; i<cellList_.size(); ++i) {
         Cell* cell = cellList_[i];
         globalBestGroup_[cell->getGroup()].push_back(cell);
     }
+    */
 }
 
 // random swap groups
 void CirMgr::randomSwap()
 {
-    const unsigned n = cellList_.size();
-    const unsigned nSwap = n / 10;
-    for(unsigned i=0; i<nSwap; ++i) {
-        unsigned id0 = rand() % n, id1 = rand() % n;
+    cuint n = cellList_.size();
+    cuint nSwap = n / 10;
+    for(uint i=0; i<nSwap; ++i) {
+        uint id0 = rand() % n, id1 = rand() % n;
         int group0 = cellList_[id0]->getGroup();
         int group1 = cellList_[id1]->getGroup();
         assert(group0 != -1 && group1 != -1);
@@ -360,24 +416,24 @@ void CirMgr::randomSwap()
 void CirMgr::initByCurrentPartition()
 {
     // initialize group count for each net
-    for(unsigned i=0; i<netList_.size(); ++i) {
+    for(uint i=0; i<netList_.size(); ++i) {
         netList_[i]->initGroupCnt();
     }
     // initialize gain for each cell
-    for(unsigned i=0; i<cellList_.size(); ++i) {
+    for(uint i=0; i<cellList_.size(); ++i) {
         cellList_[i]->setFree(true);
         cellList_[i]->initGain();
     }
     // initilize cell bucket
     cellBucket_[0]->init();
     cellBucket_[1]->init();
-    for(unsigned i=0; i<cellList_.size(); ++i) {
+    for(uint i=0; i<cellList_.size(); ++i) {
         int g = cellList_[i]->getGroup();
         cellBucket_[g]->insert(cellList_[i]);
     }
     // get initial cost
     cost_ = 0;
-    for(unsigned i=0; i<netList_.size(); ++i)
+    for(uint i=0; i<netList_.size(); ++i)
         if((netList_[i]->getGroupCnt(0) != 0) && (netList_[i]->getGroupCnt(1) != 0))
             cost_ += 1;
 }
@@ -408,7 +464,7 @@ void CirMgr::moveCell(Cell* cell)
     groupSize_[F] -= 1;
     groupSize_[T] += 1;
     const vector<Net*>& nList = cell->getNetList();
-    for(unsigned i=0; i<nList.size(); ++i) {
+    for(uint i=0; i<nList.size(); ++i) {
         Net* net = nList[i];
         if(net->getGroupCnt(T) == 0) {
             net->incGainForAll(1, cellBucket_);

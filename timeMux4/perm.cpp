@@ -78,4 +78,30 @@ Abc_Ntk_t* permPi(Abc_Ntk_t *pNtk, int *iPerm, const bool verbose)
     return pNtk;
 }
 
+/*
+inline vector<uint> parseInfo(const char *fileName, const string& head, cuint size)
+{
+    vector<uint> ret;  ret.reserve(size);
+    ifstream fp(fileName);
+    string line;
+    while(getline(fp, line)) if(line.substr(0, head.size*()) == head) {
+        line = line.substr(head.size(), line.size()-head.size());
+        size_t pos = 0;
+        while(pos != string::npos) {
+
+        }
+
+        break;
+    }
+    assert(ret.size() == size);
+    return ret;
+}
+
+void readInfo(Abc_Ntk_t *pNtk, const char *splitInfo, const char *permInfo, int* &iPerm)
+{
+    iPerm = NULL;
+
+}
+*/
+
 } // end namespace timeMux4

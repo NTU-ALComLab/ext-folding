@@ -91,7 +91,8 @@ CellBucket::CellBucket(int offset): offset_(offset)
     bucket_.clear();
     bucket_.reserve(2*offset_+1);
     for(unsigned i=0; i<=2*offset_; ++i) {
-        Cell* cell = new Cell(UINT_MAX, "dummy");
+        Cell* cell = new Cell("dummy");
+        //Cell* cell = new Cell(UINT_MAX, "dummy");
         cell->pNext_ = cell->pPrev_ = cell;
         bucket_.push_back(cell);
     }

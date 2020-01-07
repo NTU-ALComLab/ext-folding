@@ -93,11 +93,12 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux4 [-t <num>] [-l <log_file>] [-o <out_file>] [-pcvh]\n");
+    Abc_Print(-2, "usage: time_mux4 [-t <num>] [-l <log_file>] [-o <out_file>] [-i <split_info> <perm_info>] [-pcvh]\n");
     Abc_Print(-2, "\t             time multiplexing with structural approach and pin sharing\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-o         : (optional) toggles whether to write the circuit into the specified file [default = %s]\n", outFileName ? "on" : "off");
+    Abc_Print(-2, "\t-i         : (optional) reads in the circuit partitioning and permutation information [default = NULL, NULL]\n");
     Abc_Print(-2, "\t-p         : toggles the permutation of circuit inputs [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
