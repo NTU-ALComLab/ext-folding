@@ -78,30 +78,74 @@ Abc_Ntk_t* permPi(Abc_Ntk_t *pNtk, int *iPerm, const bool verbose)
     return pNtk;
 }
 
-/*
-inline vector<uint> parseInfo(const char *fileName, const string& head, cuint size)
+
+inline vector<uint> parseInfo(const char *fileName, const string& head)
 {
-    vector<uint> ret;  ret.reserve(size);
+    vector<uint> ret;
     ifstream fp(fileName);
     string line;
-    while(getline(fp, line)) if(line.substr(0, head.size*()) == head) {
+    while(getline(fp, line)) if(line.substr(0, head.size()) == head) {
         line = line.substr(head.size(), line.size()-head.size());
         size_t pos = 0;
         while(pos != string::npos) {
-
+            size_t _pos = line.find(" ", pos+1);
+            string s = line.substr(pos+1, _pos-pos-1);
+            if(s.empty()) break;
+            uint p = atoi(s.c_str());
+            ret.push_back(p);
+            pos = _pos;
         }
-
         break;
     }
-    assert(ret.size() == size);
     return ret;
 }
 
-void readInfo(Abc_Ntk_t *pNtk, const char *splitInfo, const char *permInfo, int* &iPerm)
+Abc_Ntk_t* readInfo(Abc_Ntk_t *pNtk, const char *splitInfo, const char *permInfo, int *iPerm, cuint nTimeFrame, const bool verbose)
 {
-    iPerm = NULL;
+    vector<uint> kids = parseInfo(splitInfo, "p0-i:");
+    vector<uint> iPerm0 = parseInfo(permInfo, "#iPerm:");
+    
+    assert(kids.size() <= iPerm0.size());
+    assert(iPerm0.size() % nTimeFrame == 0);
+    for(uint i=kids.size(); i<iPerm0.size(); ++i) assert(iPerm0[i] == i);
 
+    cuint nCi = Abc_NtkCiNum(pNtk);
+    cuint nPi = nCi / nTimeFrame;
+    cuint nPi0 = iPerm0.size() / nTimeFrame;
+    vector<bool> bv(nCi, false);
+
+    int *invPerm = new int[nCi];
+    for(uint i=0; i<nCi; ++i) iPerm[i] = -1;
+    for(uint i=0; i<kids.size(); ++i) {
+        cuint nt0 = iPerm0[i] / nPi0, ni0 = iPerm0[i] % nPi0;
+        uint newPos = nt0 * nPi + ni0;
+        iPerm[kids[i]] = newPos;
+        invPerm[newPos] = kids[i];
+        bv[newPos] = true;
+    }
+
+    for(uint i=0, pos=0; i<nCi; ++i) if(iPerm[i] < 0) {
+        while(bv[pos]) pos++;
+        iPerm[i] = pos;
+        invPerm[pos] = i;
+        bv[pos] = true;
+    }
+    
+    assert(timeMux2::checkPerm(iPerm, nCi, nCi));
+    assert(timeMux2::checkPerm(invPerm, nCi, nCi));
+
+    pNtk = aigUtils::aigPermCi(pNtk, invPerm, true);
+    delete [] invPerm;
+
+    if(verbose) {
+        cout << "iPerm: ";
+        for(uint i=0; i<nCi; ++i)
+            cout << iPerm[i] << " ";
+        cout << "\n";
+    }
+
+    return pNtk;
 }
-*/
+
 
 } // end namespace timeMux4

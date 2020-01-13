@@ -236,11 +236,11 @@ void CirMgr::writeSolution(const char* prefix) const
     sprintf(buf, "%s-part.info", prefix);
     ofstream fp(buf);
     for(uint j=0; j<2; ++j) {
-        fp << "p" << j << ":";
+        fp << "p" << j << "-o:";
         for(uint i=0; i<cellList_.size(); ++i) if(cellList_[i]->getBestGroup() == j) fp << " " << i;
         fp << "\n";
     }
-    fp << "p0i:";
+    fp << "p0-i:";
     for(cuint& i: kids) fp << " " << i;
     fp << "\n";
 

@@ -11,13 +11,14 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     Abc_Ntk_t *pNtk, *pNtkRes;
     bool cec = false, verbose = true;
     char *logFileName = NULL, *outFileName = NULL;
+    char *splitInfo = NULL, *permInfo = NULL;
 
     int nTimeFrame = -1;
     uint nCi, nPi, nCo;
     int *oPerm, *iPerm = NULL;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlopcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tloipcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -41,6 +42,14 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             }
             outFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
             break;
+        case 'i':
+            if(globalUtilOptind + 1 >= argc) {
+                Abc_Print(-1, "Command line switch \"-o\" should be followed by 2 strings.\n");
+                goto usage;
+            }
+            splitInfo = Extra_UtilStrsav(argv[globalUtilOptind++]);
+            permInfo = Extra_UtilStrsav(argv[globalUtilOptind++]);
+            break;
         case 'p':
             iPerm = (int*)1;
             break;
@@ -63,14 +72,15 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     }
     pNtk = aigUtils::aigToComb(pNtk, nTimeFrame);
 
-    
-
     nCo = Abc_NtkCoNum(pNtk);     // #output
     nCi = Abc_NtkCiNum(pNtk);     // #input
     nPi = nCi / nTimeFrame;       // #Pi of the sequential circuit
     assert(nCi == nPi * nTimeFrame);
 
-    if(iPerm) {
+    if(splitInfo && permInfo) {
+        iPerm = new int[nCi];
+        pNtk = readInfo(pNtk, splitInfo, permInfo, iPerm, nTimeFrame, verbose);
+    } else if(iPerm) {
         iPerm = new int[nCi];
         pNtk = permPi(pNtk, iPerm, verbose);
     }

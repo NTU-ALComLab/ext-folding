@@ -59,7 +59,7 @@ void STG::addOneTrans(DdManager *dd, DdNode *G, DdNode **oFuncs, cuint i, cuint 
 void STG::writePerm(int *perm, ostream& fp, bool isPi)
 {
     cuint &n = isPi ? nCi : nCo;
-    fp << "# " << (isPi ? "PI" : "PO") << " perm: ";
+    fp << "#" << (isPi ? "i" : "o") << "Perm: ";
     for(uint i=0; i<n; ++i) fp << perm[i] << " ";
     fp << "\n";
 }

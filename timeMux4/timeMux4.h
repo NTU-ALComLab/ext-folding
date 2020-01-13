@@ -14,6 +14,7 @@ void checkEqv(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFr
 
 // perm.cpp
 Abc_Ntk_t* permPi(Abc_Ntk_t *pNtk, int *iPerm, const bool verbose);
+Abc_Ntk_t* readInfo(Abc_Ntk_t *pNtk, const char *splitInfo, const char *permInfo, int *iPerm, cuint nTimeFrame, const bool verbose);
 } // end namespace timeMux4
 
 #endif /* __TIMEMUX4_H__ */
