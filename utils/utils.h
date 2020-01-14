@@ -52,6 +52,7 @@ Abc_Ntk_t* aigMiter(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, const bool fCompl, bool 
 Abc_Ntk_t* aigCreateDummyState();
 Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult = 1, bool rm = false);
 Abc_Ntk_t* aigInitNtk(cuint nPi, cuint nPo, cuint nLatch, const char *name = NULL);
+Abc_Ntk_t* aigMerge(Abc_Ntk_t **pNtks, cuint nNtks, bool rm=false);
 
 Abc_Obj_t* aigDot(Abc_Ntk_t* pNtk, Abc_Obj_t** v1, Abc_Obj_t** v2, cuint len);
 Abc_Obj_t* aigBitsToCube(Abc_Ntk_t *pNtk, cuint n, Abc_Obj_t **pVars, cuint nVars);

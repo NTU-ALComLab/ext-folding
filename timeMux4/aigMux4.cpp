@@ -81,7 +81,7 @@ static void storeInLats(Abc_Ntk_t *pNtkMux, cuint t, ObjFaninMap &vMap)
         sprintf(lo, "lo-tf%u_%u", t, i);
 
         Abc_Obj_t *pLat, *pCtrl, *pLatIn;
-        pLat = aigNewLatch(pNtkMux, 0, ln, li, lo);
+        pLat = aigNewLatch(pNtkMux, ABC_INIT_ZERO, ln, li, lo);
         pCtrl = Abc_ObjFanout0(Abc_NtkBox(pNtkMux, t));
         pLatIn = Abc_AigMux((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy, Abc_ObjFanout0(pLat));
         Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);

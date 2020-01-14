@@ -38,7 +38,7 @@ static void buildPiStorage(Abc_Ntk_t *pNtk, cuint nPi, cuint nTimeFrame, TimeLog
             sprintf(li, "li-tf%u_%u", t, i);
             sprintf(lo, "lo-tf%u_%u", t, i);
 
-            Abc_Obj_t *pLat = aigNewLatch(pNtk, 0, ln, li, lo);
+            Abc_Obj_t *pLat = aigNewLatch(pNtk, ABC_INIT_ZERO, ln, li, lo);
             Abc_Obj_t *pPi = Abc_NtkPi(pNtk, i);
 
             Abc_Obj_t *pLatIn = Abc_AigMux((Abc_Aig_t*)pNtk->pManFunc, pCtrl, pPi, Abc_ObjFanout0(pLat));

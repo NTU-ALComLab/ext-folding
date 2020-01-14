@@ -92,7 +92,6 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         if(cec) checkEqv(pNtk, pNtkRes, oPerm, nTimeFrame); 
     } else cerr << "Something went wrong in time_mux4!!" << endl;
 
-    
     if(logFileName) ABC_FREE(logFileName);
     if(outFileName) ABC_FREE(outFileName);
     Abc_NtkDelete(pNtk);

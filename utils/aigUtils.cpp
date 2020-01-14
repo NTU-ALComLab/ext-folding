@@ -442,10 +442,10 @@ Abc_Obj_t* aigNewLatch(Abc_Ntk_t *pNtk, cuint initVal, char *latchName, char *in
     if(outName) Abc_ObjAssignName(pLatchOutput, outName, NULL );
 
     switch(initVal) {
-    case 0:
+    case ABC_INIT_ZERO:
         Abc_LatchSetInit0(pLatch);
         break;
-    case 1:
+    case ABC_INIT_ONE:
         Abc_LatchSetInit1(pLatch);
         break;
     default:
@@ -463,7 +463,7 @@ Abc_Ntk_t* aigInitNtk(cuint nPi, cuint nPo, cuint nLatch, const char *name)
 
     for(uint i=0; i<nPi; ++i) Abc_NtkCreatePi(pNtk);
     for(uint i=0; i<nPo; ++i) Abc_NtkCreatePo(pNtk);
-    for(uint i=0; i<nLatch; ++i) aigNewLatch(pNtk, 0);
+    for(uint i=0; i<nLatch; ++i) aigNewLatch(pNtk, ABC_INIT_ZERO);
 
     Abc_NtkAddDummyPiNames(pNtk);
     Abc_NtkAddDummyPoNames(pNtk);
@@ -472,6 +472,64 @@ Abc_Ntk_t* aigInitNtk(cuint nPi, cuint nPo, cuint nLatch, const char *name)
     //assert(Abc_NtkCheck(pNtk));  // will fail, since no fanin for POs
     return pNtk;
 }
+
+Abc_Ntk_t* aigMerge(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
+{
+    int i;  char charBuf[100];
+    Abc_Ntk_t *pNtkNew;
+    Abc_Obj_t *pObj, *pObjNew;
+    
+    if(!nNtks || !pNtks) return NULL;
+    for(i=0; i<nNtks; ++i) {
+        assert(Abc_NtkCheck(pNtks[i]));
+        assert(Abc_NtkIsStrash(pNtks[i]));
+        assert(Abc_NtkIsDfsOrdered(pNtks[i]));
+    }
+    
+    // start the new network
+    pNtkNew = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    
+    sprintf(charBuf, "%u_merge", nNtks);
+    pNtkNew->pName = Extra_UtilStrsav(charBuf);
+    
+    for(uint j=0; j<nNtks; ++j) {
+        vector<Abc_Obj_t*> vLats;  vLats.reserve(Abc_NtkBoxNum(pNtks[j]));
+
+        Abc_AigConst1(pNtks[j])->pCopy = Abc_AigConst1(pNtkNew);
+        Abc_NtkForEachPi(pNtks[j], pObj, i)
+            pObj->pCopy = aigIthVar(pNtkNew, i);
+
+        Abc_NtkForEachBox(pNtks[j], pObj, i) {
+            pObjNew = aigNewLatch(pNtkNew, Abc_LatchInit(pObj));
+            Abc_ObjFanout0(pObj)->pCopy = Abc_ObjFanout0(pObjNew);
+            vLats.push_back(pObjNew);
+        }
+        assert(vLats.size() == Abc_NtkBoxNum(pNtks[j]));
+
+        Abc_AigForEachAnd(pNtks[j], pObj, i)
+            pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+
+        Abc_NtkForEachBox(pNtks[j], pObj, i) {
+            pObjNew = vLats[i];
+            Abc_ObjAddFanin(Abc_ObjFanin0(pObjNew), Abc_ObjChild0Copy(Abc_ObjFanin0(pObj)));
+        }
+        Abc_NtkForEachPo(pNtks[j], pObj, i) {
+            pObjNew = Abc_NtkCreatePo(pNtkNew);
+            Abc_ObjAddFanin(pObjNew, Abc_ObjChild0Copy(pObj));
+        }       
+    }
+
+    //Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtkNew);
+    Abc_NtkAddDummyBoxNames(pNtkNew);    
+    Abc_AigCleanup((Abc_Aig_t*)pNtkNew->pManFunc);
+    assert(Abc_NtkCheck(pNtkNew));
+
+    if(rm) for(uint j=0; j<nNtks; ++j) Abc_NtkDelete(pNtks[j]);
+    
+    return pNtkNew;
+}
+
 
 } // end namespace utils::aigUtils
 
