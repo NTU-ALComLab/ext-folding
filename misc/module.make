@@ -8,3 +8,4 @@ SRC += \
     src/ext-folding/misc/rPermIO.cpp \
     src/ext-folding/misc/readkiss.cpp \
     src/ext-folding/misc/rreadkiss.cpp \
+    src/ext-folding/misc/merge.cpp \

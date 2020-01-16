@@ -15,7 +15,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     STG *stg = NULL;
     ostream *fp;
     int nTimeFrame = -1;
-    int expConfig = 0; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none
+    int expConfig = 2; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none
     int *iPerm, *oPerm;
     uint nCi, nPi, nCo, nPo;
 
