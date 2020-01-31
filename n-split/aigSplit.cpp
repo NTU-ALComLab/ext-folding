@@ -108,7 +108,20 @@ static inline Abc_Ntk_t* collectRemain(Abc_Ntk_t *pNtk, vector<Abc_Obj_t*> &vObj
 
     unordered_map<Abc_Obj_t*, Abc_Obj_t*> vMap;
     processQue(que, pNtk, pNtkRes, vMap);
+
+  /*
+    uint cnt = 0;
+    for(auto p: vMap) {
+        if(Abc_ObjType(p.first) == ABC_OBJ_PO) cnt++;
+        else {
+            cout << p.first << " " << Abc_ObjType(p.first) << " , ";
+            cout << p.second << " " << Abc_ObjType(p.second) << endl;
+        }
+    }
+    cout << vMap.size() << " / " << Abc_NtkPoNum(pNtk) << endl;
+    cout << cnt << " / " << Abc_NtkPoNum(pNtk) << endl;
     assert(vMap.size() == Abc_NtkPoNum(pNtk));
+  */
 
     Abc_Obj_t *pObj;  uint i;
     Abc_NtkForEachPo(pNtk, pObj, i) {
@@ -125,6 +138,7 @@ static inline Abc_Ntk_t* collectRemain(Abc_Ntk_t *pNtk, vector<Abc_Obj_t*> &vObj
 
 vector<Abc_Ntk_t*> aigSplit(Abc_Ntk_t *pNtk, cuint n)
 {
+    Abc_AigCleanup((Abc_Aig_t*)pNtk->pManFunc);
     vector<Abc_Ntk_t*> ret;  ret.reserve(n+1);
     const vector<uint> iVec = iSplit(Abc_NtkPiNum(pNtk), n);
 
@@ -134,7 +148,6 @@ vector<Abc_Ntk_t*> aigSplit(Abc_Ntk_t *pNtk, cuint n)
         j += iVec[i];
         assert(j <= Abc_NtkPiNum(pNtk));
     }
-
     ret.push_back(collectRemain(pNtk, objTrack));
     assert(ret.size() == (n + 1));
     return ret;
