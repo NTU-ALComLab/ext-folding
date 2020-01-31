@@ -1,4 +1,3 @@
 SRC += \
-    src/ext-folding/2-partition/partition.cpp \
-    src/ext-folding/2-partition/cirType.cpp \
-    src/ext-folding/2-partition/fm.cpp \
+    src/ext-folding/n-split/split.cpp \
+    src/ext-folding/n-split/aigSplit.cpp \

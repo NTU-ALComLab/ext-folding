@@ -29,6 +29,13 @@ static inline void initPoIdxMap(Abc_Ntk_t *pNtk, PoIdxMap &map)
         map[pObj] = i;
 }
 
+static inline void initPoIdx(Abc_Ntk_t *pNtk)
+{
+    int i;  Abc_Obj_t *pObj;
+    Abc_NtkForEachPo(pNtk, pObj, i)
+        pObj->iTemp = i;
+}
+
 static void initQue(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, vector<Abc_Obj_t*> &que, cuint t, cuint nPi)
 {
     assert(que.empty());
@@ -40,7 +47,7 @@ static void initQue(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, vector<Abc_Obj_t*> 
     }
 }
 
-static void processQue(Abc_Ntk_t *pNtkMux, cuint t, vector<Abc_Obj_t*> &que, ObjFaninMap &vMap, PoInfos &poInfos, PoIdxMap &poIdxMap)
+static void processQue(Abc_Ntk_t *pNtkMux, cuint t, vector<Abc_Obj_t*> &que, ObjFaninMap &vMap, PoInfos &poInfos)
 {
     uint i;
     while(!que.empty()) {
@@ -49,7 +56,8 @@ static void processQue(Abc_Ntk_t *pNtkMux, cuint t, vector<Abc_Obj_t*> &que, Obj
 
         Abc_ObjForEachFanout(pObj, pFanout, i) {
             if(Abc_ObjIsPo(pFanout)) {
-                poInfos[t].push_back(make_pair(poIdxMap[pFanout], Abc_ObjChild0Copy(pFanout)));
+                poInfos[t].push_back(make_pair(pFanout->iTemp, Abc_ObjChild0Copy(pFanout)));
+                //poInfos[t].push_back(make_pair(poIdxMap[pFanout], Abc_ObjChild0Copy(pFanout)));
             } else {
                 if(vMap.find(pFanout) == vMap.end()) { // not found
                     vMap[pFanout] = pObj;
@@ -134,14 +142,16 @@ void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFra
     vector<Abc_Obj_t*> que;
     
     PoInfos poInfos;  poInfos.resize(nTimeFrame);
-    PoIdxMap poIdxMap;
-    initPoIdxMap(pNtkComb, poIdxMap);
+    //PoIdxMap poIdxMap;
+    //initPoIdxMap(pNtkComb, poIdxMap);
+    initPoIdx(pNtkComb);
 
     Abc_AigConst1(pNtkComb)->pCopy = Abc_AigConst1(pNtkMux);
 
     for(uint t=0; t<nTimeFrame; ++t) {
         initQue(pNtkComb, pNtkMux, que, t, nPi);
-        processQue(pNtkMux, t, que, vMap, poInfos, poIdxMap);
+        processQue(pNtkMux, t, que, vMap, poInfos);
+        //processQue(pNtkMux, t, que, vMap, poInfos, poIdxMap);
         storeInLats(pNtkMux, t, vMap);
     }
     assert(poInfos.size() == nTimeFrame);
