@@ -530,6 +530,49 @@ Abc_Ntk_t* aigMerge(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     return pNtkNew;
 }
 
+Abc_Ntk_t* aigReadFromFile(const string &fileName)
+{
+    char *name = Extra_UtilStrsav(fileName.c_str());
+    Abc_Ntk_t *pNtk = Io_Read(name, Io_ReadFileType(name), 1, 0);
+    ABC_FREE(name);
+    return pNtk;
+}
+
+void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId)
+{
+    if(que.empty()) return;
+
+    vector<Abc_Obj_t*> newQue;
+    for(Abc_Obj_t *pObj: que) {
+        uint i;  Abc_Obj_t *pFanout;
+        Abc_ObjForEachFanout(pObj, pFanout, i) {
+            if((Abc_ObjFanin0(pFanout)->iTemp == travId) && (Abc_ObjFanin1(pFanout)->iTemp == travId)) {
+                assert(pFanout->iTemp != travId);
+                pFanout->iTemp = travId;
+                visited.push_back(pFanout);
+                newQue.push_back(pFanout);
+            }
+        }
+    }
+    aigTravUp(visited, newQue, travId);
+}
+
+void aigTravUp(vector<Abc_Obj_t*> &visited, Abc_Obj_t *currNode, cuint travId)
+{
+    assert(currNode->iTemp == travId);
+    assert(Abc_ObjIsCi(currNode) ||
+        ((Abc_ObjFanin0(currNode)->iTemp == travId) && (Abc_ObjFanin0(currNode)->iTemp == travId)));
+
+    uint i;  Abc_Obj_t *pFanout;
+    Abc_ObjForEachFanout(currNode, pFanout, i) {
+        if((Abc_ObjFanin0(pFanout)->iTemp == travId) && (Abc_ObjFanin1(pFanout)->iTemp == travId)) {
+            assert(pFanout->iTemp != travId);
+            pFanout->iTemp = travId;
+            visited.push_back(pFanout);
+            aigTravUp(visited, pFanout, travId);
+        }
+    }
+}
 
 } // end namespace utils::aigUtils
 

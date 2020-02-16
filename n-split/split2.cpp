@@ -1,8 +1,8 @@
 #include "ext-folding/n-split/split.h"
 
-using namespace nSplit;
+using namespace nSplit2;
 
-namespace nSplit
+namespace nSplit2
 {
 
 int Split_Command(Abc_Frame_t *pAbc, int argc, char **argv)
@@ -61,7 +61,7 @@ int Split_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: split [-n <num>] [-vh] <blif_prefix>\n");
+    Abc_Print(-2, "usage: split2 [-i <num>] [-o <num>] [-n <num>] [-vh] <blif_prefix>\n");
     Abc_Print(-2, "\t             splits the circuit into n+1 pieces\n");
     Abc_Print(-2, "\t-n         : number of pieces [default = %d]\n", n);
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
@@ -95,4 +95,4 @@ struct registrar
     }
 } Split_registrar;
 
-} // end namespace nSplit
+} // end namespace nSplit2

@@ -2,6 +2,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
+extern "C"
+{
+void Abc_NtkCecFraig(Abc_Ntk_t *pNtk1, Abc_Ntk_t *pNtk2, int nSeconds, int fVerbose);
+}
+
 namespace nSplit
 {
 
@@ -54,7 +59,7 @@ static inline void processQue(vector<Abc_Obj_t*> &que, Abc_Ntk_t *pNtk, Abc_Ntk_
             if(vMap.find(pFanout) == vMap.end()) { // not found
                 vMap[pFanout] = pObj;
             } else {
-                assert(vMap[pFanout] != pObj);
+                //assert(vMap[pFanout] != pObj); // TODO: need check here!!!
                 pFanout->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkNew->pManFunc, Abc_ObjChild0Copy(pFanout), Abc_ObjChild1Copy(pFanout));
                 que.push_back(pFanout);
                 vMap.erase(pFanout);
@@ -151,6 +156,61 @@ vector<Abc_Ntk_t*> aigSplit(Abc_Ntk_t *pNtk, cuint n)
     ret.push_back(collectRemain(pNtk, objTrack));
     assert(ret.size() == (n + 1));
     return ret;
+}
+
+static inline Abc_Ntk_t* mergeNtks(vector<Abc_Ntk_t*> vNtks)
+{
+    Abc_Obj_t *pObj;  uint j;
+    Abc_Ntk_t *pNtk, *pNtkRes = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    vector<Abc_Obj_t*> vObjs;  vObjs.reserve(Abc_NtkPiNum(vNtks.back()));
+
+    for(uint i=0; i<vNtks.size()-1; ++i) {
+        pNtk = vNtks[i];
+        Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkRes);
+        
+        Abc_NtkForEachPi(pNtk, pObj, j)
+            pObj->pCopy = Abc_NtkCreatePi(pNtkRes);
+        
+        Abc_AigForEachAnd(pNtk, pObj, j)
+            pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkRes->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+
+        Abc_NtkForEachPo(pNtk, pObj, j)
+            vObjs.push_back(Abc_ObjChild0Copy(pObj));
+    }
+
+    pNtk = vNtks.back();
+    assert(vObjs.size() == Abc_NtkPiNum(pNtk));
+    Abc_AigConst1(pNtk)->pCopy = Abc_AigConst1(pNtkRes);
+
+    Abc_NtkForEachPi(pNtk, pObj, j)
+        pObj->pCopy = vObjs[j];
+
+    Abc_AigForEachAnd(pNtk, pObj, j)
+        pObj->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkRes->pManFunc, Abc_ObjChild0Copy(pObj), Abc_ObjChild1Copy(pObj));
+
+    Abc_NtkForEachPo(pNtk, pObj, j)
+        Abc_ObjAddFanin(Abc_NtkCreatePo(pNtkRes), Abc_ObjChild0Copy(pObj));
+
+    Abc_NtkAddDummyPiNames(pNtkRes);
+    Abc_NtkAddDummyPoNames(pNtkRes);
+
+    Abc_AigCleanup((Abc_Aig_t*)pNtkRes->pManFunc);
+    assert(Abc_NtkCheck(pNtkRes));
+    return pNtkRes;
+}
+
+void checkEqv(Abc_Ntk_t *pNtk, vector<Abc_Ntk_t*> vNtks)
+{
+    Abc_Ntk_t *pNtk1 = Abc_NtkDup(pNtk);
+    Abc_Ntk_t *pNtk2 = mergeNtks(vNtks);
+
+    cout << "EC status: ";
+    Abc_NtkShortNames(pNtk1);
+    Abc_NtkShortNames(pNtk2);
+    Abc_NtkCecFraig(pNtk1, pNtk2, 50, 0);
+
+    Abc_NtkDelete(pNtk1);
+    Abc_NtkDelete(pNtk2);
 }
 
 } 
