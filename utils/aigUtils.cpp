@@ -538,6 +538,7 @@ Abc_Ntk_t* aigReadFromFile(const string &fileName)
     return pNtk;
 }
 
+/*
 void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId)
 {
     if(que.empty()) return;
@@ -559,6 +560,8 @@ void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId
 
 void aigTravUp(vector<Abc_Obj_t*> &visited, Abc_Obj_t *currNode, cuint travId)
 {
+    if(Abc_ObjIsCo(currNode)) return;
+
     assert(currNode->iTemp == travId);
     assert(Abc_ObjIsCi(currNode) ||
         ((Abc_ObjFanin0(currNode)->iTemp == travId) && (Abc_ObjFanin0(currNode)->iTemp == travId)));
@@ -573,6 +576,7 @@ void aigTravUp(vector<Abc_Obj_t*> &visited, Abc_Obj_t *currNode, cuint travId)
         }
     }
 }
+*/
 
 } // end namespace utils::aigUtils
 

@@ -17,4 +17,11 @@ void checkEqv(Abc_Ntk_t *pNtk, vector<Abc_Ntk_t*> vNtks);
 
 } // end namespace nSplit
 
+namespace nSplit2
+{
+
+vector<Abc_Ntk_t*> aigSplit2(Abc_Ntk_t *pNtk, cuint mPi, cuint mPo, cuint mNode);
+
+} // end namespace nSplit2
+
 #endif /* __SPLIT_H__ */
