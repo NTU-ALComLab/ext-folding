@@ -9,7 +9,7 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 {
     int c;
     Abc_Ntk_t *pNtk, *pNtkRes;
-    bool cec = false, verbose = true;
+    bool cec = false, verbose = true, mff = false;
     char *logFileName = NULL, *outFileName = NULL;
     char *splitInfo = NULL, *permInfo = NULL;
 
@@ -18,7 +18,7 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     int *oPerm, *iPerm = NULL;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tloipcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tloimpcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -49,6 +49,9 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             }
             splitInfo = Extra_UtilStrsav(argv[globalUtilOptind++]);
             permInfo = Extra_UtilStrsav(argv[globalUtilOptind++]);
+            break;
+        case 'm':
+            mff = !mff;
             break;
         case 'p':
             iPerm = (int*)1;
@@ -85,7 +88,7 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
         pNtk = permPi(pNtk, iPerm, verbose);
     }
     oPerm = new int[nCo];
-    pNtkRes = aigStrMux(pNtk, nTimeFrame, oPerm, verbose, logFileName);
+    pNtkRes = aigStrMux(pNtk, nTimeFrame, oPerm, mff, verbose, logFileName);
     
     if(pNtk) {
         if(outFileName) Io_Write(pNtkRes, outFileName, IO_FILE_BLIF); // write file
@@ -102,12 +105,13 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux4 [-t <num>] [-l <log_file>] [-o <out_file>] [-i <split_info> <perm_info>] [-pcvh]\n");
+    Abc_Print(-2, "usage: time_mux4 [-t <num>] [-l <log_file>] [-o <out_file>] [-i <split_info> <perm_info>] [-mpcvh]\n");
     Abc_Print(-2, "\t             time multiplexing with structural approach and pin sharing\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-o         : (optional) toggles whether to write the circuit into the specified file [default = %s]\n", outFileName ? "on" : "off");
     Abc_Print(-2, "\t-i         : (optional) reads in the circuit partitioning and permutation information [default = NULL, NULL]\n");
+    Abc_Print(-2, "\t-m         : toggles the minimization of flip-flop usage [default = %s]\n", mff ? "on" : "off");
     Abc_Print(-2, "\t-p         : toggles the permutation of circuit inputs [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");

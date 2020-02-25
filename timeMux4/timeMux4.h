@@ -9,7 +9,7 @@ namespace timeMux4
 {
 
 // aigMux.cpp
-Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool verbose, const char *logFileName);
+Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool mff, const bool verbose, const char *logFileName);
 void checkEqv(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFrame);
 
 // perm.cpp

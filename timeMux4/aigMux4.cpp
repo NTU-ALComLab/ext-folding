@@ -100,6 +100,84 @@ static void storeInLats(Abc_Ntk_t *pNtkMux, cuint t, ObjFaninMap &vMap)
     }
 }
 
+static bool storeInIthLat(Abc_Ntk_t *pNtkMux, cuint i, Abc_Obj_t *pObj, Abc_Obj_t *pCtrl)
+{
+    Abc_Obj_t *pLat, *pLatIn;
+    if(i < Abc_NtkBoxNum(pNtkMux)) {
+        pLat = Abc_NtkBox(pNtkMux, i);
+        if(pLat->iTemp) return false;
+        pLatIn = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy);
+        pLatIn = Abc_AigOr((Abc_Aig_t*)pNtkMux->pManFunc, pLatIn, Abc_ObjChild0(Abc_ObjFanin0(pLat)));
+        Abc_ObjDeleteFanin(Abc_ObjFanin0(pLat), Abc_ObjFanin0(Abc_ObjFanin0(pLat)));
+        Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+    } else  {
+        char ln[100], li[100], lo[100];
+        sprintf(ln, "l-info_%u", i);
+        sprintf(li, "li-info_%u", i);
+        sprintf(lo, "lo-info_%u", i);
+
+        pLat = aigNewLatch(pNtkMux, ABC_INIT_ZERO, ln, li, lo);
+        //pLatIn = Abc_AigMux((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy, Abc_ObjFanout0(pLat));
+        pLatIn = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy);
+        Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+    }
+    pObj->pCopy = Abc_ObjFanout0(pLat);
+    return true;
+}
+
+static void storeInLats2(Abc_Ntk_t *pNtkMux, cuint t, cuint nTimeframe, ObjFaninMap &vMap)
+{
+    unordered_set<Abc_Obj_t*> vSet;  vSet.reserve(vMap.size());
+    
+    uint i;
+    Abc_Obj_t *pLat, *pLatIn, *pCtrl = Abc_ObjFanout0(Abc_NtkBox(pNtkMux, t));
+    
+    // method 1
+    Abc_NtkForEachBox(pNtkMux, pLat, i) pLat->iTemp = 0;
+    for(auto p: vMap) {
+        Abc_Obj_t *pObj = p.second;
+        if(!Abc_ObjIsBo(pObj->pCopy)) vSet.insert(p.second);
+        else {
+            pLat = Abc_ObjFanin0(pObj->pCopy);
+            pLat->iTemp = 1;
+            pLatIn = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy);
+            pLatIn = Abc_AigOr((Abc_Aig_t*)pNtkMux->pManFunc, pLatIn, Abc_ObjChild0(Abc_ObjFanin0(pLat)));
+            Abc_ObjDeleteFanin(Abc_ObjFanin0(pLat), Abc_ObjFanin0(Abc_ObjFanin0(pLat)));
+            Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+        }
+    }
+    i = nTimeframe;
+    for(Abc_Obj_t *pObj: vSet)
+        while(!storeInIthLat(pNtkMux, i++, pObj, pCtrl));
+    
+    /* method 2
+    for(auto p: vMap) vSet.insert(p.second);
+    i = 0;
+    for(Abc_Obj_t *pObj: vSet) {
+        if(Abc_NtkLatchNum(pNtkMux) < nTimeframe + i + 1) {
+            char ln[100], li[100], lo[100];
+            sprintf(ln, "l-info_%u", i);
+            sprintf(li, "li-info_%u", i);
+            sprintf(lo, "lo-info_%u", i);
+
+            pLat = aigNewLatch(pNtkMux, ABC_INIT_ZERO, ln, li, lo);
+            //pLatIn = Abc_AigMux((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy, Abc_ObjFanout0(pLat));
+            pLatIn = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy);
+            Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+        } else {
+            pLat = Abc_NtkBox(pNtkMux, nTimeframe + i);
+            pLatIn = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, pCtrl, pObj->pCopy);
+            pLatIn = Abc_AigOr((Abc_Aig_t*)pNtkMux->pManFunc, pLatIn, Abc_ObjChild0(Abc_ObjFanin0(pLat)));
+            Abc_ObjDeleteFanin(Abc_ObjFanin0(pLat), Abc_ObjFanin0(Abc_ObjFanin0(pLat)));
+            Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+        }
+        pObj->pCopy = Abc_ObjFanout0(pLat);
+        ++i;
+    }
+    */
+}
+
+
 static inline uint getPoNum(PoInfos &poInfos)
 {
     uint n = 0;
@@ -136,7 +214,7 @@ static void buildPoFuncs(Abc_Ntk_t *pNtkMux, PoInfos &poInfos, int *oPerm)
     Abc_NtkAddDummyPoNames(pNtkMux);
 }
 
-void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFrame, cuint nPi, TimeLogger *logger)
+void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFrame, cuint nPi, TimeLogger *logger, const bool mff)
 {
     ObjFaninMap vMap;
     vector<Abc_Obj_t*> que;
@@ -152,7 +230,8 @@ void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFra
         initQue(pNtkComb, pNtkMux, que, t, nPi);
         processQue(pNtkMux, t, que, vMap, poInfos);
         //processQue(pNtkMux, t, que, vMap, poInfos, poIdxMap);
-        storeInLats(pNtkMux, t, vMap);
+        if(mff) storeInLats2(pNtkMux, t, nTimeFrame, vMap);
+        else storeInLats(pNtkMux, t, vMap);
     }
     assert(poInfos.size() == nTimeFrame);
 
@@ -161,7 +240,7 @@ void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFra
     assert(timeMux2::checkPerm(oPerm, Abc_NtkPoNum(pNtkComb), Abc_NtkPoNum(pNtkMux)*nTimeFrame));
 }
 
-Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool verbose, const char *logFileName)
+Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool mff, const bool verbose, const char *logFileName)
 {
     TimeLogger *logger = logFileName ? (new TimeLogger(logFileName)) : NULL;
 
@@ -174,7 +253,7 @@ Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool v
     Abc_Ntk_t *pNtkRes = aigInitNtk(nPi, 0, nTimeFrame, buf);
 
     timeMux3::buildLatchTransWithTime(pNtkRes, nTimeFrame, logger);
-    buildTM(pNtk, pNtkRes, oPerm, nTimeFrame, nPi, logger);
+    buildTM(pNtk, pNtkRes, oPerm, nTimeFrame, nPi, logger, mff);
 
     if(verbose) {
         cout << "oPerm: ";
