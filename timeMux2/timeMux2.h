@@ -15,6 +15,9 @@ STG* bddMux2(Abc_Ntk_t *pNtk, cuint nTimeFrame, uint &nPo, int *iPerm, int *oPer
 uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *oPerm, TimeLogger *logger, const bool verbose, cuint expConfig);
 bool checkPerm(int *perm, cuint size, cuint cap);
 
+// reord2.cpp
+void manualReord(DdManager *dd, int *iPerm, int *oPerm, uint &nPo, cuint expConfig);
+
 // checkEqv.cpp
 void checkEqv(Abc_Ntk_t *pNtk, int *iPerm, int *oPerm, cuint nTimeFrame, STG *stg);
 int* extendPerm(int *perm, cuint fromSize, cuint toSize);

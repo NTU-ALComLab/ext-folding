@@ -60,6 +60,7 @@ Abc_Obj_t* aigIthVar(Abc_Ntk_t *pNtk, cuint i);
 Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo = true);
 Abc_Obj_t* aigNewLatch(Abc_Ntk_t *pNtk, cuint initVal, char *latchName = NULL, char *inName = NULL, char *outName = NULL);
 
+Abc_Ntk_t* aigReadFromFile(char *fileName);
 Abc_Ntk_t* aigReadFromFile(const string &fileName);
 void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId);
 void aigTravUp(vector<Abc_Obj_t*> &visited, Abc_Obj_t *currNode, cuint travId);

@@ -15,7 +15,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     STG *stg = NULL;
     ostream *fp;
     int nTimeFrame = -1;
-    int expConfig = 2; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none
+    int expConfig = 2; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none, 4: manual(M567), 5: manual(M8)
     int *iPerm, *oPerm;
     uint nCi, nPi, nCo, nPo;
 
@@ -43,7 +43,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             expConfig = atoi(argv[globalUtilOptind++]);
-            if((expConfig < 0) || (expConfig > 3)) goto usage;
+            if((expConfig < 0) || (expConfig > 5)) goto usage;
             break;
         case 'm':
             mode = !mode;
@@ -73,6 +73,13 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     nCi = Abc_NtkCiNum(pNtk);     // #input
     nPi = nCi / nTimeFrame;       // #Pi of the sequential circuit
     assert(nCi == nPi * nTimeFrame);
+
+    if((expConfig == 4) || (expConfig == 5)) {
+        assert(nTimeFrame == 34);
+        assert(nCi == 68);
+        if(expConfig == 4) assert(nCo == 39);
+        else assert(nCo == 2);
+    }
     
     // init i/o-Perm
     iPerm = new int[nCi];

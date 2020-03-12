@@ -235,6 +235,18 @@ void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFra
     }
     assert(poInfos.size() == nTimeFrame);
 
+    /*
+    for(uint t=0; t<nTimeFrame; ++t) {
+        vector<PoInfoPair> &infoPV = poInfos[t];
+        sort(infoPV.begin(), infoPV.end());
+        cout << "t=" << t << ":";
+        for(uint i=0; i<infoPV.size(); ++i) {
+            cout << " " << Abc_ObjName(Abc_NtkPo(pNtkComb, infoPV[i].first));
+        }
+        cout << endl;
+    }
+    */
+
     buildPoFuncs(pNtkMux, poInfos, oPerm);
 
     assert(timeMux2::checkPerm(oPerm, Abc_NtkPoNum(pNtkComb), Abc_NtkPoNum(pNtkMux)*nTimeFrame));

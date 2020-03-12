@@ -387,7 +387,7 @@ Abc_Obj_t** aigComputeSign(Abc_Ntk_t *pNtk, cuint range, bool fAddPo)
 Abc_Ntk_t* aigToComb(Abc_Ntk_t *pNtk, cuint mult, bool rm)
 {
     bool fDel = !Abc_NtkIsStrash(pNtk);
-    Abc_Ntk_t *pNtkDup = fDel ? Abc_NtkStrash(pNtk, 0, 0, 0) : pNtk;
+    Abc_Ntk_t *pNtkDup = fDel ? Abc_NtkStrash(pNtk, 0, 1, 0) : pNtk;
     Abc_AigCleanup((Abc_Aig_t*)pNtkDup->pManFunc);
     
     int i;  Abc_Obj_t *pObj, *pObjNew;
@@ -530,10 +530,19 @@ Abc_Ntk_t* aigMerge(Abc_Ntk_t **pNtks, cuint nNtks, bool rm)
     return pNtkNew;
 }
 
+Abc_Ntk_t* aigReadFromFile(char *fileName)
+{
+    Abc_Ntk_t *pNtk = Io_Read(fileName, Io_ReadFileType(fileName), 1, 0);
+    Abc_Ntk_t *pNtkRes = Abc_NtkStrash(pNtk, 0, 1, 0);
+    Abc_NtkDelete(pNtk);
+    return pNtkRes;
+}
+
 Abc_Ntk_t* aigReadFromFile(const string &fileName)
 {
     char *name = Extra_UtilStrsav(fileName.c_str());
-    Abc_Ntk_t *pNtk = Io_Read(name, Io_ReadFileType(name), 1, 0);
+    Abc_Ntk_t *pNtk = aigReadFromFile(name);
+    //Abc_Ntk_t *pNtk = Io_Read(name, Io_ReadFileType(name), 1, 0);
     ABC_FREE(name);
     return pNtk;
 }

@@ -112,7 +112,7 @@ usage:
     Abc_Print(-2, "\t-o         : (optional) toggles whether to write the circuit into the specified file [default = %s]\n", outFileName ? "on" : "off");
     Abc_Print(-2, "\t-i         : (optional) reads in the circuit partitioning and permutation information [default = NULL, NULL]\n");
     Abc_Print(-2, "\t-m         : toggles the minimization of flip-flop usage [default = %s]\n", mff ? "on" : "off");
-    Abc_Print(-2, "\t-p         : toggles the permutation of circuit inputs [default = %s]\n", cec ? "on" : "off");
+    Abc_Print(-2, "\t-p         : toggles the permutation of circuit inputs [default = %s]\n", iPerm ? "on" : "off");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
     Abc_Print(-2, "\t-h         : print the command usage\n");

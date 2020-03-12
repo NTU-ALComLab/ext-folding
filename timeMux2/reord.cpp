@@ -314,12 +314,15 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
     uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
     uint nPi = nCi / nTimeFrame;
 
-    int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
-    schedulePI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbose, expConfig);
-    if((expConfig == 0) || (expConfig == 1))
-        reordPO(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
-
-    delete [] slots;
+    if((expConfig == 4) || (expConfig == 5)) {
+        manualReord(dd, iPerm, oPerm, nPo, expConfig);
+    } else {
+        int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
+        schedulePI(dd, sVecs, slots, nTimeFrame, nCi, nPo, iPerm, logger, verbose, expConfig);
+        if((expConfig == 0) || (expConfig == 1))
+            reordPO(dd, sVecs, slots, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
+        delete [] slots;
+    }
     return nPo;
 }
 
