@@ -547,6 +547,27 @@ Abc_Ntk_t* aigReadFromFile(const string &fileName)
     return pNtk;
 }
 
+Abc_Ntk_t* aigConstructDummyNtk(cuint n)
+{
+    char buf[100];
+    sprintf(buf, "dummy_%u", n);
+
+    Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtk->pName = Extra_UtilStrsav(buf);    
+    
+    for(uint i=0; i<n; ++i) {
+        Abc_Obj_t *pPi = Abc_NtkCreatePi(pNtk);
+        Abc_Obj_t *pPo = Abc_NtkCreatePo(pNtk);
+        Abc_ObjAddFanin(pPo, pPi);
+    }
+    
+    Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtk);
+    assert(Abc_NtkCheck(pNtk));
+    
+    return pNtk;
+}
+
 /*
 void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId)
 {

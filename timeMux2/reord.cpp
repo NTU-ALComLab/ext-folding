@@ -314,7 +314,7 @@ uint reordIO(Abc_Ntk_t *pNtk, DdManager *dd, cuint nTimeFrame, int *iPerm, int *
     uint nPo = (uint)ceil(float(nCo) / float(nTimeFrame));
     uint nPi = nCi / nTimeFrame;
 
-    if((expConfig == 4) || (expConfig == 5)) {
+    if((expConfig == 4) || (expConfig == 5) || (expConfig == 6)) {
         manualReord(dd, iPerm, oPerm, nPo, expConfig);
     } else {
         int *slots = schedulePO(sVecs, nTimeFrame, nCi, nCo, nPi, nPo, oPerm, logger, verbose);
