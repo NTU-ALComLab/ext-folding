@@ -37,11 +37,37 @@ static inline void reord9(DdManager *dd, int *iPerm, int *oPerm, uint &nPo)
     oPerm[0] = 1;
 }
 
+static inline void reord10(DdManager *dd, int *iPerm, int *oPerm, uint &nPo)
+{
+    nPo = 2;
+    initIPerm(dd, iPerm, 102);
+    for(uint i=0; i<34; ++i) oPerm[i] = 2 * i;
+    oPerm[34] = 33 * 2 + 1;
+}
+
+static inline void reord11(DdManager *dd, int *iPerm, int *oPerm, uint &nPo)
+{
+    /*
+    nPo = 1;
+    initIPerm(dd, iPerm, 102);
+    oPerm[0] = 17;
+    oPerm[1] = 33;
+    */
+   nPo = 3;
+   initIPerm(dd, iPerm, 34);
+   oPerm[0] = 0;
+   oPerm[1] = 3;
+   oPerm[2] = 4;
+   oPerm[3] = 5;
+}
+
 void manualReord(DdManager *dd, int *iPerm, int *oPerm, uint &nPo, cuint expConfig)
 {
     if(expConfig == 4) reord567(dd, iPerm, oPerm, nPo);
     else if(expConfig == 5) reord8(dd, iPerm, oPerm, nPo);
     else if(expConfig == 6) reord9(dd, iPerm, oPerm, nPo);
+    else if(expConfig == 7) reord10(dd, iPerm, oPerm, nPo);
+    else if(expConfig == 8) reord11(dd, iPerm, oPerm, nPo);
     else assert(false);
 }
 

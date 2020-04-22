@@ -50,19 +50,39 @@ static void initQue(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, vector<Abc_Obj_t*> 
 static void processQue(Abc_Ntk_t *pNtkMux, cuint t, vector<Abc_Obj_t*> &que, ObjFaninMap &vMap, PoInfos &poInfos)
 {
     uint i;
+    //vector<Abc_Obj_t*> que2;
     while(!que.empty()) {
         Abc_Obj_t *pObj = que.back(), *pFanout;
         que.pop_back();
 
+        /*
+        if(Abc_ObjIsPo(pObj)) {
+            if(poInfos[t].size() < 22)
+                    poInfos[t].push_back(make_pair(pObj->iTemp, Abc_ObjChild0Copy(pObj)));
+            else
+                que2.push_back(pObj);
+            continue;
+        }
+        */
+
         Abc_ObjForEachFanout(pObj, pFanout, i) {
             if(Abc_ObjIsPo(pFanout)) {
                 poInfos[t].push_back(make_pair(pFanout->iTemp, Abc_ObjChild0Copy(pFanout)));
+
+                /*
+                if(poInfos[t].size() < 22)
+                    poInfos[t].push_back(make_pair(pFanout->iTemp, Abc_ObjChild0Copy(pFanout)));
+                else
+                    que2.push_back(pFanout);
+                */
+
                 //poInfos[t].push_back(make_pair(poIdxMap[pFanout], Abc_ObjChild0Copy(pFanout)));
             } else {
                 if(vMap.find(pFanout) == vMap.end()) { // not found
                     vMap[pFanout] = pObj;
                 } else {
                     assert(vMap[pFanout] != pObj);
+                    if(vMap[pFanout] == pObj) continue;
                     pFanout->pCopy = Abc_AigAnd((Abc_Aig_t*)pNtkMux->pManFunc, Abc_ObjChild0Copy(pFanout), Abc_ObjChild1Copy(pFanout));
                     que.push_back(pFanout);
                     vMap.erase(pFanout);
@@ -70,6 +90,7 @@ static void processQue(Abc_Ntk_t *pNtkMux, cuint t, vector<Abc_Obj_t*> &que, Obj
             }
         }
     }
+    //for(Abc_Obj_t* pObj: que2) que.push_back(pObj);
 }
 
 static void storeInLats(Abc_Ntk_t *pNtkMux, cuint t, ObjFaninMap &vMap)
@@ -214,7 +235,7 @@ static void buildPoFuncs(Abc_Ntk_t *pNtkMux, PoInfos &poInfos, int *oPerm)
     Abc_NtkAddDummyPoNames(pNtkMux);
 }
 
-void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFrame, cuint nPi, TimeLogger *logger, const bool mff)
+void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFrame, cuint nPi, TimeLogger *logger, const bool mff, const bool verbose)
 {
     ObjFaninMap vMap;
     vector<Abc_Obj_t*> que;
@@ -232,22 +253,24 @@ void buildTM(Abc_Ntk_t *pNtkComb, Abc_Ntk_t *pNtkMux, int *oPerm, cuint nTimeFra
         //processQue(pNtkMux, t, que, vMap, poInfos, poIdxMap);
         if(mff) storeInLats2(pNtkMux, t, nTimeFrame, vMap);
         else storeInLats(pNtkMux, t, vMap);
+        if(logger) logger->log("traverse_" + to_string(t));
     }
     assert(poInfos.size() == nTimeFrame);
 
-    
-    for(uint t=0; t<nTimeFrame; ++t) {
-        vector<PoInfoPair> &infoPV = poInfos[t];
-        sort(infoPV.begin(), infoPV.end());
-        cout << "t=" << t << ":";
-        for(uint i=0; i<infoPV.size(); ++i) {
-            cout << " " << Abc_ObjName(Abc_NtkPo(pNtkComb, infoPV[i].first));
+    if(verbose) {
+        for(uint t=0; t<nTimeFrame; ++t) {
+            vector<PoInfoPair> &infoPV = poInfos[t];
+            sort(infoPV.begin(), infoPV.end());
+            cout << "PO @t=" << t << ":";
+            for(uint i=0; i<infoPV.size(); ++i)
+                cout << " " << Abc_ObjName(Abc_NtkPo(pNtkComb, infoPV[i].first));
+            cout << "\n";
         }
-        cout << endl;
+        cout << "--------------------------------------------------" << endl;
     }
-    
 
     buildPoFuncs(pNtkMux, poInfos, oPerm);
+    if(logger) logger->log("build_PO");
 
     assert(timeMux2::checkPerm(oPerm, Abc_NtkPoNum(pNtkComb), Abc_NtkPoNum(pNtkMux)*nTimeFrame));
 }
@@ -265,7 +288,7 @@ Abc_Ntk_t* aigStrMux(Abc_Ntk_t *pNtk, cuint nTimeFrame, int *oPerm, const bool m
     Abc_Ntk_t *pNtkRes = aigInitNtk(nPi, 0, nTimeFrame, buf);
 
     timeMux3::buildLatchTransWithTime(pNtkRes, nTimeFrame, logger);
-    buildTM(pNtk, pNtkRes, oPerm, nTimeFrame, nPi, logger, mff);
+    buildTM(pNtk, pNtkRes, oPerm, nTimeFrame, nPi, logger, mff, verbose);
 
     if(verbose) {
         cout << "oPerm: ";

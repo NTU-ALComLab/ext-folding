@@ -15,7 +15,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     STG *stg = NULL;
     ostream *fp;
     int nTimeFrame = -1;
-    int expConfig = 2; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none, 4: manual(M567), 5: manual(M8), 6: manual(M9)
+    int expConfig = 2; // 0: all heuristics, 1: reord PO, 2: reord PI, 3: none, 4: manual(M567), 5: manual(M8), 6: manual(M9), 7: manual(34-adder w/ Cin), 8: manual(34-adderY w/ Cin)
     int *iPerm, *oPerm;
     uint nCi, nPi, nCo, nPo;
 
@@ -43,7 +43,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
                 goto usage;
             }
             expConfig = atoi(argv[globalUtilOptind++]);
-            if((expConfig < 0) || (expConfig > 6)) goto usage;
+            if((expConfig < 0) || (expConfig > 8)) goto usage;
             break;
         case 'm':
             mode = !mode;

@@ -568,6 +568,28 @@ Abc_Ntk_t* aigConstructDummyNtk(cuint n)
     return pNtk;
 }
 
+Abc_Ntk_t* aigBuildParity(cuint n)
+{
+    char buf[100];
+    sprintf(buf, "parity_%u", n);
+
+    Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtk->pName = Extra_UtilStrsav(buf);    
+    
+    Abc_Obj_t *pObj = Abc_ObjNot(Abc_AigConst1(pNtk));
+
+    for(uint i=0; i<n; ++i)
+        pObj = Abc_AigXor((Abc_Aig_t*)pNtk->pManFunc, Abc_NtkCreatePi(pNtk), pObj);
+    
+    Abc_ObjAddFanin(Abc_NtkCreatePo(pNtk), pObj);
+    
+    Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtk);
+    assert(Abc_NtkCheck(pNtk));
+    
+    return pNtk;
+}
+
 /*
 void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId)
 {
