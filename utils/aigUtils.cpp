@@ -590,6 +590,110 @@ Abc_Ntk_t* aigBuildParity(cuint n)
     return pNtk;
 }
 
+Abc_Obj_t* aigGenVoter3(Abc_Ntk_t *pNtk, const vector<Abc_Obj_t*> &vObj)
+{
+    assert(vObj.size() == 3);
+    Abc_Obj_t *p1, *p2, *p3, *ret;
+    Abc_Aig_t *pMan = (Abc_Aig_t*)pNtk->pManFunc;
+    p1 = Abc_AigAnd(pMan, vObj[0], vObj[1]);
+    p2 = Abc_AigAnd(pMan, vObj[0], vObj[2]);
+    p3 = Abc_AigAnd(pMan, vObj[1], vObj[2]);
+    ret = Abc_AigOr(pMan, p1, p2);
+    ret = Abc_AigOr(pMan, p3, ret);
+    return ret;
+}
+
+Abc_Ntk_t* aigGenVoterN_seq(cuint n)
+{
+    Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtk->pName = Extra_UtilStrsav("voter");
+    
+    Abc_Aig_t *pMan = (Abc_Aig_t*)pNtk->pManFunc;
+    Abc_Obj_t *pPi = Abc_NtkCreatePi(pNtk);
+
+    Abc_Obj_t *pLat_prev = NULL;
+    for(uint i=0; i<n/2+1; ++i) {
+    //for(uint i=0; i<n; ++i) {
+        Abc_Obj_t *pLat = aigNewLatch(pNtk, ABC_INIT_ZERO), *pLatIn;
+        pLatIn = (i == 0) ? pPi : Abc_AigAnd(pMan, Abc_ObjFanout0(pLat_prev), pPi);
+        pLatIn = Abc_AigOr(pMan, Abc_ObjFanout0(pLat), pLatIn);
+        Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
+        pLat_prev = (i == n/2) ? pLatIn : pLat;
+    }
+
+    /*
+    Abc_Obj_t *pPo = Abc_ObjNot(Abc_AigConst1(pNtk));
+    for(uint i=n/2; i<n; ++i) {
+        Abc_Obj_t *pObj = Abc_ObjFanout0(Abc_NtkBox(pNtk, i));
+        pPo = Abc_AigOr(pMan, pObj, pPo);
+    }
+    Abc_ObjAddFanin(Abc_NtkCreatePo(pNtk), pPo);
+    */
+    Abc_ObjAddFanin(Abc_NtkCreatePo(pNtk), pLat_prev);
+
+    Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtk);
+    Abc_NtkAddDummyBoxNames(pNtk);
+    assert(Abc_NtkCheck(pNtk));
+    return pNtk;
+}
+
+Abc_Ntk_t* aigBuildVoter(cuint n)
+{
+    assert(n % 2 == 1);
+    Abc_Ntk_t *pNtkSeq = aigGenVoterN_seq(n);
+    Abc_Ntk_t *pNtkExp = Abc_NtkFrames(pNtkSeq, n, 1, 0);
+    Abc_Ntk_t *pNtkRes = aigSingleCone(pNtkExp, Abc_NtkPoNum(pNtkExp)-1, true);
+    Abc_NtkDelete(pNtkSeq);
+    assert(Abc_NtkCheck(pNtkRes));
+    return pNtkRes;
+}
+
+/* wrong implementaion
+Abc_Obj_t* aigGenVoterN(Abc_Ntk_t *pNtk, const vector<Abc_Obj_t*> &vObj)
+{
+    if(vObj.size() == 1) return vObj[0];
+    assert(vObj.size() % 2 == 1);
+    cuint q = vObj.size() / 3;
+    cuint r = vObj.size() % 3;
+    vector<Abc_Obj_t*> vObj2;
+    vObj2.reserve(q + r);
+    for(uint i=0; i<r; ++i)
+        vObj2.push_back(vObj[q*3+i]);
+    for(uint i=0; i<q; ++i) {
+        vector<Abc_Obj_t*> vObj3;  vObj3.reserve(3);
+        for(uint j=0; j<3; ++j)
+            vObj3.push_back(vObj[i*3+j]);
+        vObj2.push_back(aigGenVoter3(pNtk, vObj3));
+    }
+    return aigGenVoterN(pNtk, vObj2);
+}
+
+Abc_Ntk_t* aigBuildVoter(cuint n)
+{
+    assert(n % 2 == 1);
+    char buf[100];
+    sprintf(buf, "voter_%u", n);
+
+    Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtk->pName = Extra_UtilStrsav(buf);    
+    
+    vector<Abc_Obj_t*> vObj;
+    vObj.reserve(n);
+    for(uint i=0; i<n; ++i)
+        vObj.push_back(Abc_NtkCreatePi(pNtk));
+    
+    Abc_Obj_t *pObj = aigGenVoterN(pNtk, vObj);
+    Abc_ObjAddFanin(Abc_NtkCreatePo(pNtk), pObj);
+    
+    Abc_NtkAddDummyPiNames(pNtk);
+    Abc_NtkAddDummyPoNames(pNtk);
+    assert(Abc_NtkCheck(pNtk));
+    
+    return pNtk;
+}
+*/
+
 /*
 void aigTravUp(vector<Abc_Obj_t*> &visited, vector<Abc_Obj_t*> que, cuint travId)
 {

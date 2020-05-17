@@ -9,6 +9,7 @@ SRC += \
     src/ext-folding/misc/merge.cpp \
     src/ext-folding/misc/constructDummy.cpp \
     src/ext-folding/misc/buildParity.cpp \
+    src/ext-folding/misc/buildVoter.cpp \
 
 #    src/ext-folding/misc/readkiss.cpp \
 #    src/ext-folding/misc/rreadkiss.cpp \
