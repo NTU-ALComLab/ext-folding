@@ -193,7 +193,7 @@ int KissHot_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 // called during ABC startup
 void init1(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Misc", "read_kiss1", KissHot_Command, 0);
+    Cmd_CommandAdd(pAbc, "Misc", "read_kiss1", KissHot_Command, 1);
 }
 
 // called during ABC termination

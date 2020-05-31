@@ -281,7 +281,7 @@ int KissNat_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 // called during ABC startup
 void init0(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Misc", "read_kiss0", KissNat_Command, 0);
+    Cmd_CommandAdd(pAbc, "Misc", "read_kiss0", KissNat_Command, 1);
 }
 
 // called during ABC termination

@@ -644,4 +644,4 @@ struct registrar
     }
 } memin_registrar;
 
-} // unnamed namespace MeMin
+} // end namespace MeMin

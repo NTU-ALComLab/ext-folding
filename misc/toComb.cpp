@@ -53,7 +53,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Misc", "to_comb", ToComb_Command, 0);
+    Cmd_CommandAdd(pAbc, "Misc", "to_comb", ToComb_Command, 1);
 }
 
 // called during ABC termination

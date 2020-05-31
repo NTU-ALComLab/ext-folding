@@ -97,6 +97,8 @@ int tMux4_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 
     if(logFileName) ABC_FREE(logFileName);
     if(outFileName) ABC_FREE(outFileName);
+    if(splitInfo) ABC_FREE(splitInfo);
+    if(permInfo) ABC_FREE(permInfo);
     Abc_NtkDelete(pNtk);
     Abc_FrameReplaceCurrentNetwork(pAbc, pNtkRes);
     if(iPerm) delete [] iPerm;
@@ -122,7 +124,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux4", tMux4_Command, 0);
+    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux4", tMux4_Command, 1);
 }
 
 // called during ABC termination

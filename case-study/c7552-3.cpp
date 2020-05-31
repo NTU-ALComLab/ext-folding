@@ -430,7 +430,7 @@ int C7552_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "c7552-3", C7552_Command, 0);
+    Cmd_CommandAdd(pAbc, "Time-frame Folding", "c7552-3", C7552_Command, 1);
 }
 
 // called during ABC termination
