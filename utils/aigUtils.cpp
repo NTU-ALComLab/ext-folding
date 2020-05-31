@@ -3,7 +3,7 @@
 extern "C"
 {
 void Abc_NtkRemovePo(Abc_Ntk_t *pNtk, int iOutput, int fRemoveConst0);
-int Abc_NtkQuantify(Abc_Ntk_t *pNtk, int fUniv, int iVar, int fVerbose);
+//int Abc_NtkQuantify(Abc_Ntk_t *pNtk, int fUniv, int iVar, int fVerbose);
 }
 
 namespace utils::aigUtils
@@ -603,7 +603,7 @@ Abc_Obj_t* aigGenVoter3(Abc_Ntk_t *pNtk, const vector<Abc_Obj_t*> &vObj)
     return ret;
 }
 
-Abc_Ntk_t* aigGenVoterN_seq(cuint n)
+Abc_Ntk_t* aigGenVoterN_seq(cuint n, const bool tieVal)
 {
     Abc_Ntk_t *pNtk = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
     pNtk->pName = Extra_UtilStrsav("voter");
@@ -612,13 +612,15 @@ Abc_Ntk_t* aigGenVoterN_seq(cuint n)
     Abc_Obj_t *pPi = Abc_NtkCreatePi(pNtk);
 
     Abc_Obj_t *pLat_prev = NULL;
-    for(uint i=0; i<n/2+1; ++i) {
+
+    cuint nn = n/2 + (n%2 ? 1 : (1-tieVal));
+    for(uint i=0; i<nn; ++i) {
     //for(uint i=0; i<n; ++i) {
         Abc_Obj_t *pLat = aigNewLatch(pNtk, ABC_INIT_ZERO), *pLatIn;
         pLatIn = (i == 0) ? pPi : Abc_AigAnd(pMan, Abc_ObjFanout0(pLat_prev), pPi);
         pLatIn = Abc_AigOr(pMan, Abc_ObjFanout0(pLat), pLatIn);
         Abc_ObjAddFanin(Abc_ObjFanin0(pLat), pLatIn);
-        pLat_prev = (i == n/2) ? pLatIn : pLat;
+        pLat_prev = (i == nn-1) ? pLatIn : pLat;
     }
 
     /*
@@ -634,22 +636,38 @@ Abc_Ntk_t* aigGenVoterN_seq(cuint n)
     Abc_NtkAddDummyPiNames(pNtk);
     Abc_NtkAddDummyPoNames(pNtk);
     Abc_NtkAddDummyBoxNames(pNtk);
+    Abc_AigCleanup(pMan);
     assert(Abc_NtkCheck(pNtk));
     return pNtk;
 }
 
-Abc_Ntk_t* aigBuildVoter(cuint n)
+// replace a primary input with constant 0 or 1
+// currently only supports combinational circuits (no flip-flops)
+Abc_Ntk_t* aigPiCofactor(Abc_Ntk_t *pNtk, cuint iPi, bool val, bool rm)
 {
-    assert(n % 2 == 1);
-    Abc_Ntk_t *pNtkSeq = aigGenVoterN_seq(n);
+    char buf[100];
+    sprintf(buf, "%s_cofi%u", pNtk->pName, iPi);
+
+    Abc_Ntk_t *pNtkRes = Abc_NtkAlloc(ABC_NTK_STRASH, ABC_FUNC_AIG, 1);
+    pNtkRes->pName = Extra_UtilStrsav(buf);
+
+    uint i;  Abc_Obj_t *pObj;
+    return pNtkRes;
+}
+
+Abc_Ntk_t* aigBuildVoter(cuint n, const bool tieVal)
+{
+    //assert(n % 2 == 1);
+    Abc_Ntk_t *pNtkSeq = aigGenVoterN_seq(n, tieVal);
     Abc_Ntk_t *pNtkExp = Abc_NtkFrames(pNtkSeq, n, 1, 0);
     Abc_Ntk_t *pNtkRes = aigSingleCone(pNtkExp, Abc_NtkPoNum(pNtkExp)-1, true);
     Abc_NtkDelete(pNtkSeq);
     assert(Abc_NtkCheck(pNtkRes));
     return pNtkRes;
+    //return NULL;
 }
 
-/* wrong implementaion
+/* wrong implementaion of voter
 Abc_Obj_t* aigGenVoterN(Abc_Ntk_t *pNtk, const vector<Abc_Obj_t*> &vObj)
 {
     if(vObj.size() == 1) return vObj[0];
