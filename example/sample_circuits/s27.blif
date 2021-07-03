@@ -1,0 +1,28 @@
+# Benchmark "s27.blif" written by ABC on Mon Sep 23 15:11:08 2019
+.model s27.blif
+.inputs G0 G1 G2 G3
+.outputs G17
+
+.latch        n12         G5  0
+.latch        n17         G6  0
+.latch        n22         G7  0
+
+.names G1 G7 new_n15_
+00 1
+.names G3 G5 new_n16_
+10 1
+.names new_n15_ new_n16_ new_n17_1_
+11 1
+.names G0 G5 new_n18_
+00 1
+.names G6 new_n18_ new_n19_
+11 1
+.names new_n17_1_ new_n19_ G17
+00 1
+.names G0 new_n17_1_ n12
+10 1
+.names G2 new_n15_ n22
+00 1
+.names G17 n17
+0 1
+.end

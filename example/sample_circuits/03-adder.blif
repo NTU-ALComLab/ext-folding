@@ -1,0 +1,43 @@
+# Benchmark "3-adder" written by ABC on Thu Oct 10 21:31:12 2019
+.model 3-adder
+.inputs a2 a1 b2 b1 a0 b0
+.outputs s2 s1 s0 cout
+.names a2 b2 new_n12_
+00 1
+.names a2 b2 new_n13_
+11 1
+.names a1 b1 new_n14_
+00 1
+.names a1 b1 new_n15_
+11 1
+.names a0 b0 new_n16_
+11 1
+.names new_n15_ new_n16_ new_n17_
+00 1
+.names new_n14_ new_n17_ new_n18_
+00 1
+.names new_n13_ new_n18_ new_n19_
+00 1
+.names new_n12_ new_n19_ cout
+00 1
+.names new_n12_ new_n13_ new_n21_
+00 1
+.names new_n18_ new_n21_ new_n22_
+10 1
+.names new_n18_ new_n21_ new_n23_
+01 1
+.names new_n22_ new_n23_ s2
+00 0
+.names new_n14_ new_n15_ new_n25_
+00 1
+.names new_n16_ new_n25_ new_n26_
+01 1
+.names new_n16_ new_n25_ new_n27_
+10 1
+.names new_n26_ new_n27_ s1
+00 0
+.names a0 b0 new_n29_
+00 1
+.names new_n16_ new_n29_ s0
+00 1
+.end
