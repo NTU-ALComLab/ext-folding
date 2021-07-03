@@ -1,86 +1,62 @@
-[![Build Status](https://travis-ci.org/berkeley-abc/ext-hello-abc.svg?branch=master)](https://travis-ci.org/berkeley-abc/ext-hello-abc)
+# ext-folding
+A circuit folding interface embedded in Berkeley's [ABC](https://github.com/berkeley-abc/abc) system.
 
-# Adding an extension module to ABC without modifying ABC
+## Overview
+Circuit folding is a technique
 
-This repository contains an example on how to add a module to ABC without modifying ABC itself. This has several advantages:
+The proposed circuit folding techniques can be useful in testbench generation, sequential synthesis of bounded strategies, and various applications in logic synthesis.
 
-* You can easily update to newer version of ABC.
-* You can put this in a separate source control repository.
-* You can easily combine multiple such projects without any additional modification to ABC.
+add image
 
-This examples add a command `@hello`, that prints out a greeting and its arguments.
-
-## Instructions
-
-1. Clone the ABC repository
-
-```bash
-git clone https://github.com/berkeley-abc/abc.git
+## How to Compile
+```
+git clone git@github.com:berkeley-abc/abc.git
+git clone link-to-this-project
+ln -s ext-folding/ abc/src/.
 ```
 
-2. Extract this repository under `src/`
-
-```bash
-cd abc/src
-git clone https://github.com/berkeley-abc/ext-hello-abc
 ```
-
-3. Build ABC
-
-```bash
+cd abc/
 make
+cd ../
 ```
+## Command Usage
+### Circuit Folding Commands
+### Miscellaneous Commands
+refer to the `example/`
 
+## Citation
+Please refer to the following papers if you are interested in our work. You may cite our papers with the provided BibTex entries.
 
-4. Run the new command
+* [ICCAD 2019 paper](https://po-chun-chien.github.io/publication/2019-11-timeFold):
+  ```
+  @inproceedings{Chien:ICCAD:2019,
+      author      = {Po-Chun Chien and Jie-Hong Roland Jiang},
+      title       = {Time-Frame Folding: Back to the Sequentiality},
+      booktitle   = {Proceedings of the International Conference of Computer-Aided Design (ICCAD)},
+      year        = {2019}
+  }
+  ```
 
-```
-$ ./abc
-UC Berkeley, ABC 1.01 (compiled Mar 11 2018 00:55:29)
-abc 01> @hello 1 2 3
-Hello world!
-  argv[0]: @hello
-  argv[1]: 1
-  argv[2]: 2
-  argv[3]: 3
-abc 01>
-```
+* [DAC 2020 paper](https://po-chun-chien.github.io/publication/2020-07-timeMux):
+  ```
+  @inproceedings{Chien:DAC:2020,
+      author      = {Po-Chun Chien and Jie-Hong Roland Jiang},
+      title       = {Time Multiplexing via Circuit Folding},
+      booktitle   = {Proceedings of the Design Automation Conference (DAC)},
+      year        = {2020}
+  }
+  ```
 
-## Some Details
+* [Master's Thesis](https://po-chun-chien.github.io/publication/2020-06-thesis):
+  ```
+  @mastersthesis{Chien:Thesis:2020,
+      author  = {Po-Chun Chien},
+      title   = {Circuit Folding: From Combinational to Sequential Circuits},
+      school  = {National Taiwan University},
+      year    = {2020}
+  }
+  ```
 
-### `.gitignore`
-
-ABC's `.gitignore` file also ignores `src/ext*`, to prevent accidentally adding your extensions to ABC. 
-
-### Makefile
-
-The ABC Makefile is based on the classic paper [Recursive Make Considered Harmful](http://aegis.sourceforge.net/auug97.pdf).
-
-The Makefile has a variable named `MODULES` that contains a list of subdirectories where it looks for files named `module.make`. The `module.make` file should add the module's source files to the variable `SRC`.
-
-The `MODULES` varialbe also contains a line
-```Makefile
-$(wildcard src/ext*) 
-```
-which instructs it to look for `module.make` files under any directory under `src/` whose name starts with `ext`.
-
-
-### Adding Commands to ABC
-
-To run your code as part of ABC, you need to register commands. To do that, we provide an way of registering functions to be called on ABC startup and termination. This is demonstrated in `init.cpp`.
-
-1. Write an `init()` and `destroy()` functions. 
-
-2. Create a global initializer object:
-
-```
-Abc_FrameInitializer_t frame_initializer = { init, destroy };
-```
-
-3. Register the initializer object:
-
-```
-Abc_FrameAddInitializer(&frame_initializer);
-```
-
-This is best done before `main()` is called. The simplest way to do that is in C++,  by using a constructor of a global obejct, as constructors of global objects are called before `main()`.
+## Contact
+If you have any questions or suggestions, feel free to [create an issue](TODO) or contact us through r07943091@ntu.edu.tw.
