@@ -136,7 +136,7 @@ int tMux_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 
 usage:
     Abc_Print(-2, "usage: time_mux [-t <num>] [-l <log_file>] [-mrcvh] <kiss_file>\n");
-    Abc_Print(-2, "\t             time multiplexing\n");
+    Abc_Print(-2, "\t             time multiplexing via functional circuit folding (w/o PO pin sharing)\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
@@ -151,7 +151,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux", tMux_Command, 0);
+    Cmd_CommandAdd(pAbc, "Circuit Folding (dev)", "time_mux", tMux_Command, 0);
 }
 
 // called during ABC termination

@@ -56,14 +56,15 @@ unordered_set<IncSpecSeq> getDisjointInputSet(vector<vector<pair<IncSpecSeq*, pa
 void findPairwiseIncStates(vector<int>& pairwiseIncStates, vector<bool>& incompMatrix, int nStates);
 
 void usage() {
-	cout << "usage: memin [Options] <kiss_file>" << endl;
-	cout << "Options:" << endl;
-	cout << "\t-r        if no reset state is specified, any state might be a reset state" << endl;
-	cout <<	"\t          (otherwise, the first state is assumed to be the reset state)"<< endl;
-	cout << "\t-np       do not include the 'partial solution' in the SAT problem" << endl;
-	cout << "\t-nl       like -np, but does also not use the size of the 'partial solution'" << endl;
-	cout << "\t          as a lower bound (i.e., does not need the partial solution at all)" << endl;
-	cout << "\t-v {0,1}  verbosity level" << endl;
+	cout << "usage: memin [-np] [-nl] [-v {0,1}] [-rh] <input_kiss> <output_kiss>" << endl;
+	cout << "\t            	: performs SAT-based exact FSM minimization" << endl;
+	cout << "\t-np       	: do not include the 'partial solution' in the SAT problem" << endl;
+	cout << "\t-nl       	: like -np, but does also not use the size of the 'partial solution' as a lower bound (i.e., does not need the partial solution at all)" << endl;
+	cout << "\t-v {0,1}  	: toggles the verbosity level" << endl;
+	cout << "\t-r        	: if no reset state is specified, any state might be a reset state (otherwise, the first state is assumed to be the reset state)" << endl;
+	cout << "\t-h        	: prints the command usage" << endl;
+	cout << "\tinput_kiss  	: the input FSM in KISS format for minimization" << endl;
+	cout << "\toutput_kiss	: the output FSM in KISS format after minimization"  << endl;
 }
 
 int MeMin_Command(Abc_Frame_t *pAbc, int argc, char **argv) {
@@ -623,7 +624,7 @@ void findPairwiseIncStates(vector<int>& pairwiseIncStates, vector<bool>& incompM
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd( pAbc, "Time-frame Folding", "memin", MeMin_Command, 0);
+    Cmd_CommandAdd(pAbc, "Misc", "memin", MeMin_Command, 0);
 }
 
 // called during ABC termination

@@ -82,7 +82,7 @@ int tMux3_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 
 usage:
     Abc_Print(-2, "usage: time_mux3 [-t <num>] [-l <log_file>] [-o <out_file>] [-cvh]\n");
-    Abc_Print(-2, "\t             time multiplexing with structural approach\n");
+    Abc_Print(-2, "\t             time multiplexing via structural circuit folding (naive approach by temporarily storing inputs of the first t−1 time-frames into flip-flops and deferring all outputs at the last time-frame, w/o pin sharing)\n");
     Abc_Print(-2, "\t-t         : number of time-frames\n");
     Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
     Abc_Print(-2, "\t-o         : (optional) toggles whether to write the circuit into the specified file [default = %s]\n", outFileName ? "on" : "off");
@@ -95,7 +95,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux3", tMux3_Command, 1);
+    Cmd_CommandAdd(pAbc, "Circuit Folding (dev)", "time_mux3", tMux3_Command, 1);
 }
 
 // called during ABC termination

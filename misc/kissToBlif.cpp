@@ -50,13 +50,13 @@ int KissToBlif_Command(Abc_Frame_t *pAbc, int argc, char **argv)
 
 usage:
     Abc_Print(-2, "usage: kiss_to_blif [-derh] <in.kiss> <out.blif>\n");
-    Abc_Print(-2, "\t             converts a STG in kiss format into a sequential circuit in blif format\n");
+    Abc_Print(-2, "\t             converts a FSM in KISS format into a sequential circuit in BLIF format\n");
     Abc_Print(-2, "\t-d         : the replacing value of don't care outputs [default = %s]\n", dcVal ? "1" : "0");
     Abc_Print(-2, "\t-e         : the encoding scheme of the states [default = %s]\n", enc ? "natural" : "one-hot");
     Abc_Print(-2, "\t-r         : toggles whether to replace current network [default = %s]\n", replace ? "on" : "off");
-    Abc_Print(-2, "\t-h         : print the command usage\n");
-    Abc_Print(-2, "\tin.kiss    : input kiss file\n");
-    Abc_Print(-2, "\tout.blif   : output blif file\n");
+    Abc_Print(-2, "\t-h         : prints the command usage\n");
+    Abc_Print(-2, "\tin_kiss    : input KISS file\n");
+    Abc_Print(-2, "\tout_blif   : output BLIF file\n");
     return 1;
 }
 

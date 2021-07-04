@@ -18,7 +18,7 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlmcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlcvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -35,9 +35,9 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             }
             logFileName = Extra_UtilStrsav(argv[globalUtilOptind++]);
             break;
-        case 'm':
-            mode = !mode;
-            break;
+        //case 'm':
+        //    mode = !mode;
+        //    break;
         case 'c':
             cec = !cec;
             break;
@@ -82,22 +82,22 @@ int tFold_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-mcvh] <kiss_file>\n");
-    Abc_Print(-2, "\t             folds the time-frame expanded circuit and transform it into a STG\n");
-    Abc_Print(-2, "\t-t         : number of time-frames to be folded\n");
-    Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
-    Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
+    Abc_Print(-2, "usage: time_fold [-t <num>] [-l <log_file>] [-cvh] <kiss_file>\n");
+    Abc_Print(-2, "\t             performs time-frame folding on the given iterative (time-frame expanded) circuit and transform it into a FSM in KISS format\n");
+    Abc_Print(-2, "\t-t         : the number of time-frames to be folded\n");
+    Abc_Print(-2, "\t-l         : toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
+  //Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
-    Abc_Print(-2, "\t-h         : print the command usage\n");
-    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
+    Abc_Print(-2, "\t-h         : prints the command usage\n");
+    Abc_Print(-2, "\tkiss_file  : (optional) output KISS file name [default = stdout]\n");
     return 1;
 }
 
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_fold", tFold_Command, 0);
+    Cmd_CommandAdd(pAbc, "Circuit Folding", "time_fold", tFold_Command, 0);
 }
 
 // called during ABC termination

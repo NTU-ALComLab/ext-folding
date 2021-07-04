@@ -20,7 +20,7 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     uint nCi, nPi, nCo, nPo;
 
     Extra_UtilGetoptReset();
-    while((c=Extra_UtilGetopt(argc, argv, "tlemcvh")) != EOF) {
+    while((c=Extra_UtilGetopt(argc, argv, "tlecvh")) != EOF) {
         switch(c) {
         case 't':
             if(globalUtilOptind >= argc) {
@@ -45,9 +45,9 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
             expConfig = atoi(argv[globalUtilOptind++]);
             if((expConfig < 0) || (expConfig > 8)) goto usage;
             break;
-        case 'm':
-            mode = !mode;
-            break;
+        //case 'm':
+        //    mode = !mode;
+        //    break;
         case 'c':
             cec = !cec;
             break;
@@ -107,23 +107,25 @@ int tMux2_Command(Abc_Frame_t *pAbc, int argc, char **argv)
     return 0;
 
 usage:
-    Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-e <config>] [-mcvh] <kiss_file>\n");
-    Abc_Print(-2, "\t             time multiplexing with PO pin sharing\n");
-    Abc_Print(-2, "\t-t         : number of time-frames\n");
-    Abc_Print(-2, "\t-l         : (optional) toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
-    Abc_Print(-2, "\t-e         : (optional) toggles experiment configuration (0, 1, 2, 3) [default = %d]\n", expConfig);
-    Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
+  //Abc_Print(-2, "usage: time_mux2 [-t <num>] [-l <log_file>] [-e <config>] [-mcvh] <kiss_file>\n");
+    Abc_Print(-2, "usage: func_fold [-t <num>] [-l <log_file>] [-e <config>] [-cvh] <kiss_file>\n");
+    Abc_Print(-2, "\t             time multiplexing via functional circuit folding (w/ PO pin sharing)\n");
+    Abc_Print(-2, "\t-t         : the number of time-frames to be folded\n");
+    Abc_Print(-2, "\t-l         : toggles logging of the runtime [default = %s]\n", logFileName ? "on" : "off");
+    Abc_Print(-2, "\t-e         : toggles experimental configuration (0, 1, 2, 3) [default = %d]\n", expConfig);
+  //Abc_Print(-2, "\t-m         : toggles methods for cut set enumeration [default = %s]\n", mode ? "AIG" : "BDD");
     Abc_Print(-2, "\t-c         : toggles equivalence checking with the original circuit [default = %s]\n", cec ? "on" : "off");
     Abc_Print(-2, "\t-v         : toggles verbosity [default = %s]\n", verbose ? "on" : "off");
-    Abc_Print(-2, "\t-h         : print the command usage\n");
-    Abc_Print(-2, "\tkiss_file  : (optional) output kiss file name\n");
+    Abc_Print(-2, "\t-h         : prints the command usage\n");
+    Abc_Print(-2, "\tkiss_file  : (optional) output KISS file name [default = stdout]\n");
     return 1;
 }
 
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd(pAbc, "Time-frame Folding", "time_mux2", tMux2_Command, 0);
+    Cmd_CommandAdd(pAbc, "Circuit Folding (dev)", "time_mux2", tMux2_Command, 0);
+    Cmd_CommandAdd(pAbc, "Circuit Folding", "func_fold", tMux2_Command, 0);
 }
 
 // called during ABC termination

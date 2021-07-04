@@ -162,7 +162,7 @@ usage:
 // called during ABC startup
 void init(Abc_Frame_t* pAbc)
 {
-    Cmd_CommandAdd( pAbc, "Time-frame Folding", "time_cas", TimeCas_Command, 0);
+    Cmd_CommandAdd(pAbc, "Circuit Folding (dev)", "time_cas", TimeCas_Command, 0);
 }
 
 // called during ABC termination
