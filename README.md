@@ -80,11 +80,9 @@ The usage of these commands are listed below.
 usage: memin [-np] [-nl] [-v {0,1}] [-rh] <input_kiss> <output_kiss>
                         : performs SAT-based exact FSM minimization
         -np             : do not include the 'partial solution' in the SAT problem
-        -nl             : like -np, but does also not use the size of the 'partial solution' as a lower bound
-                          (i.e., does not need the partial solution at all)
+        -nl             : like -np, but does also not use the size of the 'partial solution' as a lower bound (i.e., does not need the partial solution at all)
         -v {0,1}        : toggles the verbosity level
-        -r              : if no reset state is specified, any state might be a reset state 
-                          (otherwise, the first state is assumed to be the reset state)
+        -r              : if no reset state is specified, any state might be a reset state (otherwise, the first state is assumed to be the reset state)
         -h              : prints the command usage
         input_kiss      : the input FSM in KISS format for minimization
         output_kiss     : the output FSM in KISS format after minimization
