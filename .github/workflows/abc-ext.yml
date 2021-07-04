@@ -16,6 +16,7 @@ jobs:
       - name: Test with sample scripts
         if: ${{ success() }}
         run: |
-          cd abc && ./abc -F src/ext-folding/example/scripts/run_time_fold.txt
-          cd abc && ./abc -F src/ext-folding/example/scripts/run_func_fold.txt
-          cd abc && ./abc -F src/ext-folding/example/scripts/run_stru_fold.txt
+          cd abc/
+          ./abc -F src/ext-folding/example/scripts/run_time_fold.txt
+          ./abc -F src/ext-folding/example/scripts/run_func_fold.txt
+          ./abc -F src/ext-folding/example/scripts/run_stru_fold.txt
