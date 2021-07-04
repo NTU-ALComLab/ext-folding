@@ -1,0 +1,7 @@
+read src/ext-folding/example/sample_circuits/s27.blif   # read s27 benchmark 
+frames -i -F 3                                          # time-frame unfolding 
+time_fold -t 3 -v s27_fsm.kiss                          # time-frame folding
+memin s27_fsm.kiss s27_fsm.m.kiss                       # FSM minimization
+kiss_to_blif -r s27_fsm.m.kiss s27_fsm.m.blif           # encode FSM into logic circuit
+resyn2rs; scorr                                         # logic optimization
+print_stats                                             # print info.

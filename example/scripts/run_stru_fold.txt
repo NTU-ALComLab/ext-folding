@@ -1,0 +1,4 @@
+read src/ext-folding/example/sample_circuits/03-adder.blif  # read 3-bit adder
+stru_fold -t 3 -mpv                                         # structural circuit folding
+resyn2rs; scorr                                             # logic optimization
+print_stats                                                 # print info.

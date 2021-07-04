@@ -1,0 +1,6 @@
+read src/ext-folding/example/sample_circuits/03-adder.blif  # read 3-bit adder
+func_fold -t 3 -v adder_fsm.kiss                            # functional circuit folding
+memin adder_fsm.kiss adder_fsm.m.kiss                       # FSM minimization
+kiss_to_blif -r adder_fsm.m.kiss adder_fsm.m.blif           # encode FSM into logic circuit
+resyn2rs; scorr                                             # logic optimization
+print_stats                                                 # print info.
