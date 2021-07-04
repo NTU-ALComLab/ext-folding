@@ -20,8 +20,8 @@ cd abc/ && make                                         # build ABC with the ext
 Alternately, we also provide the `Dockerfile` to build the docker image capable of executing our codes.
 ```
 git clone git@github.com:Po-Chun-Chien/ext-folding.git  # clone this repository
-docker build -t Folding ext-folding/                    # build the docker image
-docker run -it Folding                                  # start a container
+docker build -t folding ext-folding/                    # build the docker image
+docker run -it folding                                  # start a container
 ```
 
 <a class="anchor" id="fn1">[1]</a>: Note that the codes in this project are written in C++11, you may need to set `CXXFLAGS := -std=c++11` in `abc/Makefile`.
@@ -31,7 +31,7 @@ docker run -it Folding                                  # start a container
 To fold a logic circuit, 3 commands are provided.
 * `time_fold` (time-fram folding): It is a reverse operation of time-frame unfolding (expansion). Its input circuit should be in iterative (or time-frame expanded) form.
 * `func_fold` (functional BDD-based folding): It is an extension of `time_fold`. Its input is no longer restricted to iterative circuits. Any general combinational circuits would work.
-* `stru_fold` (structural AIG-based foldig): It takes the same input as `func_fold`. When compared to `func_fold`, `stru_fold` is more scalable but the resulting folded circuit size is less optimal.
+* `stru_fold` (structural AIG-based foldig): It takes the same input as `func_fold`. When compared to `func_fold`, `stru_fold` is more scalable but the size of the resulting folded circuit is usually less optimal.
 
 Different from `stru_fold`, which directly generate a folded circuit as a result, commands `time_fold` and `func_fold` produce as their outputs finite state machines (FSM) in [KISS2](https://link.springer.com/content/pdf/bbm%3A978-3-642-36166-1%2F1.pdf) format. You can further apply some minimization techniques (such as [stamina](https://github.com/JackHack96/logic-synthesis) and [MeMin](https://github.com/andreas-abel/MeMin)) to the obtained FSM and encode it into a logic circuit. 
 
