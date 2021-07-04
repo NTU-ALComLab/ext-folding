@@ -9,6 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Compile
         run: |
+          apt-get install apt-get install libboost-all-dev -y
           git clone https://github.com/berkeley-abc/abc.git
           ln -s $PWD abc/src/
           cd abc && make -j8
