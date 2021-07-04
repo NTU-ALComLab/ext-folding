@@ -6,5 +6,5 @@ RUN apt install git build-essential clang bison flex \
         libboost-python-dev libboost-filesystem-dev zlib1g-dev -y
 COPY . ext-folding
 RUN git clone https://github.com/berkeley-abc/abc.git abc
-RUN ln -s ext-folding abc/src/.
+RUN ln -s /ext-folding /abc/src/.
 RUN cd abc && make -j8
