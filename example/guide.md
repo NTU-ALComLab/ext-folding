@@ -11,7 +11,7 @@ abc 03> memin s27_fsm.kiss s27_fsm.m.kiss                       # FSM minimizati
 abc 03> kiss_to_blif -r s27_fsm.m.kiss s27_fsm.m.blif           # encode FSM into logic circuit
 abc 04> resyn2rs; scorr                                         # logic optimization
 abc 07> print_stats                                             # print info.
-blif                          : i/o =    4/    1  lat =    3  and =     21  lev =  5
+blif                          : i/o =    4/    1  lat =    3  and =     22  lev =  5
 ```
 You can also run the provided script.
 ```
@@ -49,7 +49,7 @@ abc 01> read src/ext-folding/example/sample_circuits/03-adder.blif  # read 3-bit
 abc 02> stru_fold -t 3 -mpv                                         # structural circuit folding
 abc 03> resyn2rs; scorr                                             # logic optimization
 abc 08> print_stats                                                 # print info.
-3-adder_perm-tm3              : i/o =    2/    2  lat =    4  and =     15  lev =  5
+3-adder_perm-tm3              : i/o =    2/    2  lat =    4  and =     15  lev =  6
 ```
 You can also run the provided script.
 ```
