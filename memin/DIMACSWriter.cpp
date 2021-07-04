@@ -101,7 +101,7 @@ void addLitToCurrentClause(int lit) {
 		while (var >= (S->nVars())) {
 			S->newVar();
 		}
-		curMinisatClause.push((lit>0) ? mkLit(var) : ~mkLit(var));
+		curMinisatClause.push((lit>0) ? mkLit(var, false) : ~mkLit(var, false));
 	} else {
 		curClause.push_back(lit);
 	}
