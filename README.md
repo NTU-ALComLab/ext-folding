@@ -12,14 +12,14 @@ If you like to learn more about this research work, please refer to these [refer
 This repository contains an [extension module](https://github.com/berkeley-abc/ext-hello-abc) of [ABC](https://github.com/berkeley-abc/abc). Please follow the instructions below to compile[<sup>[1]</sup>](#fn1) this project.
 ```
 git clone git@github.com:berkeley-abc/abc.git           # clone ABC
-git clone git@github.com:Po-Chun-Chien/ext-folding.git  # clone this repository
+git clone git@github.com:NTU-ALComLab/ext-folding.git  # clone this repository
 ln -s ext-folding/ abc/src/.                            # link this repository to abc/src/
 cd abc/ && make                                         # build ABC with the extension module
 ```
 
 Alternately, we also provide the `Dockerfile` to build the docker image capable of executing our codes.
 ```
-git clone git@github.com:Po-Chun-Chien/ext-folding.git  # clone this repository
+git clone git@github.com:NTU-ALComLab/ext-folding.git  # clone this repository
 docker build -t folding ext-folding/                    # build the docker image
 docker run -it folding                                  # start a container
 ```
@@ -99,7 +99,7 @@ usage: kiss_to_blif [-derh] <in.kiss> <out.blif>
         out_blif   : output BLIF file
 ```
 
-Check [`example/guide.md`](https://github.com/Po-Chun-Chien/ext-folding/blob/master/example/guide.md) for some simple examples to run our tool.
+Check [`example/guide.md`](https://github.com/NTU-ALComLab/ext-folding/blob/master/example/guide.md) for some simple examples to run our tool.
 
 ## <a class="anchor" id="refs"></a>References
 Please refer to the following papers if you are interested in our work. You may cite our papers with the provided BibTex entries.
@@ -135,4 +135,4 @@ Please refer to the following papers if you are interested in our work. You may 
   ```
 
 ## Contact
-If you have any problems or suggestions, feel free to create an [issue](https://github.com/Po-Chun-Chien/ext-folding/issues) or contact us through r07943091@ntu.edu.tw.
+If you have any problems or suggestions, feel free to create an [issue](https://github.com/NTU-ALComLab/ext-folding/issues) or contact us through r07943091@ntu.edu.tw.
