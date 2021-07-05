@@ -12,14 +12,14 @@ If you like to learn more about this research work, please refer to these [refer
 This repository contains an [extension module](https://github.com/berkeley-abc/ext-hello-abc) of [ABC](https://github.com/berkeley-abc/abc). Please follow the instructions below to compile[<sup>[1]</sup>](#fn1) this project.
 ```
 git clone git@github.com:berkeley-abc/abc.git           # clone ABC
-git clone git@github.com:NTU-ALComLab/ext-folding.git  # clone this repository
-ln -s ext-folding/ abc/src/.                            # link this repository to abc/src/
+git clone git@github.com:NTU-ALComLab/ext-folding.git   # clone this repository
+ln -s $PWD/ext-folding/ abc/src/.                       # link this repository to abc/src/
 cd abc/ && make                                         # build ABC with the extension module
 ```
 
 Alternately, we also provide the `Dockerfile` to build the docker image capable of executing our codes.
 ```
-git clone git@github.com:NTU-ALComLab/ext-folding.git  # clone this repository
+git clone git@github.com:NTU-ALComLab/ext-folding.git   # clone this repository
 docker build -t folding ext-folding/                    # build the docker image
 docker run -it folding                                  # start a container
 ```
