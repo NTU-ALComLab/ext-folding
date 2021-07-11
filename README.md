@@ -73,7 +73,7 @@ usage: stru_fold [-t <num>] [-l <log_file>] [-o <out_file>] [-i <split_info> <pe
 ### Miscellaneous Commands
 Additionally, we implemented some useful helper commands, which are not directly related to circuit folding.
 * `memin`: It is a tool for SAT-based exact minimization of incompletely specified Mealy machines. The source code is copied and modified from the original [MeMin repository](https://github.com/andreas-abel/MeMin).
-* `kiss_to_blif`: It converts a FSM into a sequential logic circuit with different state encoding methods.
+* `kiss_to_blif`: It converts a FSM into a sequential logic circuit in [BLIF](https://people.eecs.berkeley.edu/~alanmi/publications/other/blif.pdf) format with different state encoding methods.
 
 The usage of these commands are listed below.
 ```
