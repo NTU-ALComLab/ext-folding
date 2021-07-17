@@ -110,7 +110,8 @@ Please refer to the following papers if you are interested in our work. You may 
       author      = {Po-Chun Chien and Jie-Hong Roland Jiang},
       title       = {Time-Frame Folding: Back to the Sequentiality},
       booktitle   = {Proceedings of the International Conference of Computer-Aided Design (ICCAD)},
-      year        = {2019}
+      year        = {2019},
+      doi         = {10.1109/iccad45719.2019.8942078}
   }
   ```
 
@@ -120,7 +121,8 @@ Please refer to the following papers if you are interested in our work. You may 
       author      = {Po-Chun Chien and Jie-Hong Roland Jiang},
       title       = {Time Multiplexing via Circuit Folding},
       booktitle   = {Proceedings of the Design Automation Conference (DAC)},
-      year        = {2020}
+      year        = {2020},
+      doi         = {10.1109/dac18072.2020.9218552}
   }
   ```
 
@@ -130,7 +132,8 @@ Please refer to the following papers if you are interested in our work. You may 
       author  = {Po-Chun Chien},
       title   = {Circuit Folding: From Combinational to Sequential Circuits},
       school  = {National Taiwan University},
-      year    = {2020}
+      year    = {2020},
+      doi     = {10.6342/NTU202001058}
   }
   ```
 
